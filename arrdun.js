@@ -14,12 +14,17 @@ jQuery('document').ready(() => {
         
         PR_ELEM,
         PR_AB_SIZE, PR_AB_SLEN,
-        PR_AB_TAB,
+        PR_AB_TAB, PR_AB_SEQ,
         
         MTD_NEW_ELEM, MTD_NEW_TAB,
         MTD_GETUNIT, MTD_DIST, MTD_CALC_TAB_SPC,
+        MTD_GETSEQ, MTD_SHIFTSEQ,
         
     ] = sym_gen();
+    
+    const
+        CALLABLE = (f) => f instanceof Function,
+        RLIM = (v, a, b) => Math.max(a, Math.min(b, v));
     
     class c_board {
         
@@ -32,9 +37,11 @@ jQuery('document').ready(() => {
             let elem = $('<div>')
                 .addClass('ars_board')
                 .attr('id', 'ar_board');
+            let [stelem, stab] = this[MTD_NEW_TAB]('ar_tab_seq', [ this[PR_AB_SLEN], 1]);
             let [mtelem, mtab] = this[MTD_NEW_TAB]('ar_tab_main', this[PR_AB_SIZE]);
-            elem.append(mtelem);
+            elem.append(stelem).append(mtelem);
             this[PR_AB_TAB] = mtab;
+            this[PR_AB_SEQ] = stab;
             return elem;
         }
         
@@ -109,19 +116,7 @@ jQuery('document').ready(() => {
             return [wspc, hspc];
         }
         
-        [MTD_LOCK]() {
-            if(this[FLG_BUSY]) {
-                throw Error('be locked');
-            }
-            this[FLG_BUSY] = true;
-        }
-        
-        [MTD_UNLOCK]() {
-            this[FLG_BUSY] = false;
-        }
-        
         async popanim_slide(spos, doffs) {
-            this[MTD_LOCK]();
             let [sx, sy] = spos;
             let celem = this[PR_AB_TAB][sy][sx];
             let uelem = this[MTD_GETUNIT](celem);
@@ -132,14 +127,119 @@ jQuery('document').ready(() => {
                 left: '+=' + dx,
                 top: '+=' + dy,
             }).promise();
-            this[MTD_UNLOCK]();
+        }
+        
+        [MTD_GETSEQ](tab, spos, dir) {
+            let th = tab.length;
+            let tw = tab[0].length;
+            let [sx, sy] = spos;
+            let [dx, dy] = dir;
+            let [ox, oy] = [0, 0];
+            if(dx && dy) {
+                throw Error('invalid direct');
+            } else if(dx) {
+                ox = -Math.sign(dx);
+                sx = RLIM(sx + dx, 0, tw - 1);
+                dx = RLIM(sx + ox * Infinity, 0, tw - 1);
+                dy = sy;
+            } else if(dy) {
+                oy = -Math.sign(dy);
+                sy = RLIM(sy + dy, 0, th - 1);
+                dy = RLIM(sy + oy * Infinity, 0, th - 1);
+                dx = sx;
+            }
+            let seq = [tab[sy][sx]];
+            while(sx != dx || sy != dy) {
+                sx += ox;
+                sy += oy;
+                seq.push(tab[sy][sx]);
+            }
+            return seq;
+        }
+        
+        async [MTD_SHIFTSEQ](seq, extra = null,
+            cb_take = null, cb_put = null,
+            acb_shift = null, acb_hide = null, acb_show = null) {
+            let loop = !extra;
+            let slen = seq.length;
+            let shift_seq = [];
+            if(loop) {
+                shift_seq.push([seq[slen - 1], seq[0]]);
+            }
+            for(let i = 0; i < slen - 1; i++) {
+                shift_seq.push([seq[i], seq[i + 1]]);
+            }
+            let prms = [];
+            if(!loop && CALLABLE(acb_hide)) {
+                prms.push(acb_hide(seq[0]));
+            }
+            if(CALLABLE(acb_shift)) {
+                for(let [d, s] of shift_seq) {
+                    prms.push(acb_shift(d, s));
+                }
+            }
+            if(prms.length > 0) {
+                await Promise.all(prms);
+            }
+            if(CALLABLE(cb_take) && CALLABLE(cb_put)) {
+                let first = null;
+                let last = null;
+                for(let [d, s] of shift_seq) {
+                    if(first === null) {
+                        first = cb_take(d, true);
+                    }
+                    cb_put(d, cb_take(s, false), false);
+                    last = s;
+                }
+                if(last) {
+                    if(!loop) {
+                        first = extra;
+                    }
+                    cb_put(last, first, true);
+                }
+            }
+            if(!loop && CALLABLE(acb_show)) {
+                await acb_show(extra);
+            }
+        }
+        
+        async shift(spos, dir, pushed) {
+            if(pushed) {
+                dir = dir.map(v => v ? v * Infinity : 0);
+            }
+            let sseq = this[MTD_GETSEQ](this[PR_AB_TAB], spos, dir);
+            if(pushed) {
+                sseq = sseq.concat(
+                    this[MTD_GETSEQ](this[PR_AB_SEQ], [1, 0], [-1, 0])
+                );
+            }
+            let first = null;
+            let msf = m => (...na) => console.log(m, ...na);
+            await this[MTD_SHIFTSEQ](sseq, pushed,
+                (celem, isfirst) => {
+                    let uelem = this[MTD_GETUNIT](celem);
+                    uelem.remove();
+                    if(pushed && isfirst) {
+                        first = uelem;
+                    }
+                    return uelem;
+                }, (celem, uelem, islast) => {
+                    if(islast) return;
+                    uelem.attr('left', '').attr('top', '');
+                    celem.append(uelem);
+                },
+                msf('shift'), msf('hide'), msf('show'),
+            );
+            return first;
         }
         
     }
     
     const scene = $('<div>').addClass('ars_scene');
-    /*const*/ board = new c_board([3, 5]);
+    /*const*/ board = new c_board([3, 5], 3);
     scene.append(board.elem);
     $('body').append(scene);
+    
+    //getseq = (sp, d) => board[MTD_GETSEQ](board[PR_AB_TAB], sp, d).map(v=>v[0]);
     
 });
