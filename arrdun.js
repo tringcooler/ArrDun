@@ -16,7 +16,7 @@ jQuery('document').ready(() => {
         PR_AB_SIZE, PR_AB_SLEN,
         PR_AB_TAB, PR_AB_SEQ,
         
-        MTD_NEW_ELEM, MTD_NEW_TAB,
+        MTD_NEW_ELEM, MTD_NEW_UNIT, MTD_NEW_TAB,
         MTD_GETUNIT, MTD_DIST, MTD_CALC_TAB_SPC,
         MTD_GETSEQ, MTD_SHIFTSEQ,
         
@@ -45,6 +45,13 @@ jQuery('document').ready(() => {
             return elem;
         }
         
+        [MTD_NEW_UNIT](val) {
+            let uelem = $('<div>')
+                .addClass('ars_unit');
+            uelem.text('->');
+            return uelem;
+        }
+        
         [MTD_NEW_TAB](id, size) {
             let [sw, sh] = size;
             let elem = $('<table>')
@@ -59,9 +66,7 @@ jQuery('document').ready(() => {
                 for(let x = 0; x < sw; x++) {
                     let celem = $('<td>').addClass('ars_cell')
                     relem.append(celem);
-                    let uelem = $('<div>')
-                        .addClass('ars_unit');
-                    uelem.text('->');
+                    let uelem = this[MTD_NEW_UNIT]();
                     celem.append(uelem);
                     row.push(celem);
                 }
@@ -87,7 +92,6 @@ jQuery('document').ready(() => {
             }
             let {left: left1, top: top1} = e1.offset();
             let {left: left2, top: top2} = e2.offset();
-            console.log('dist', left2, left1, top2, top1);
             return [left2 - left1, top2 - top1];
         }
         
@@ -203,8 +207,8 @@ jQuery('document').ready(() => {
             }
         }
         
-        async shift(spos, dir, pushed) {
-            if(pushed) {
+        async shift(spos, dir, pushed, dur = 200) {
+            if(!pushed) {
                 dir = dir.map(v => v ? v * Infinity : 0);
             }
             let sseq = this[MTD_GETSEQ](this[PR_AB_TAB], spos, dir);
@@ -215,7 +219,12 @@ jQuery('document').ready(() => {
             }
             let first = null;
             let msf = m => (...na) => console.log(m, ...na);
-            await this[MTD_SHIFTSEQ](sseq, pushed,
+            let extra = null;
+            if(pushed) {
+                extra = this[MTD_NEW_UNIT]();
+                extra.hide(0);
+            }
+            await this[MTD_SHIFTSEQ](sseq, extra,
                 (celem, isfirst) => {
                     let uelem = this[MTD_GETUNIT](celem);
                     uelem.remove();
@@ -224,11 +233,21 @@ jQuery('document').ready(() => {
                     }
                     return uelem;
                 }, (celem, uelem, islast) => {
-                    if(islast) return;
-                    uelem.attr('left', '').attr('top', '');
+                    if(pushed && islast) {
+                        //pass
+                    }
+                    uelem.css({'left': '', 'top': ''});
                     celem.append(uelem);
+                }, async (dcel, scel) => {
+                    let du = this[MTD_GETUNIT](dcel);
+                    let su = this[MTD_GETUNIT](scel);
+                    let [dx, dy] = this[MTD_DIST](su, du);
+                    await su.animate({left: '+=' + dx, top: '+=' + dy}, dur).promise();
+                }, async cel => {
+                    await this[MTD_GETUNIT](cel).hide('fade', dur).promise();
+                }, async uel => {
+                    await uel.show('fade', dur).promise();
                 },
-                msf('shift'), msf('hide'), msf('show'),
             );
             return first;
         }
