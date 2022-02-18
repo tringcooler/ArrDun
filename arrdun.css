@@ -1,14 +1,18 @@
 
+.ars_pad_console {
+    display: table;
+}
+
 .ars_lefttok {
-    width: 100px;
+    display: table-cell;
+    width: 135px;
     height: 30px;
 }
 
 .ars_pad_button {
-    /*float: right;*/
+    display: table-cell;
     border: 1px solid;
-    /*position: relative;*/
-    width: 50px;
+    width: 30px;
     height: 30px;
 }
 

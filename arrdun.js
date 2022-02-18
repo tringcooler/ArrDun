@@ -22,8 +22,8 @@ jQuery('document').ready(() => {
         MTD_NEW_ELEM, MTD_NEW_PAD,
         MTD_NEW_UNIT, MTD_NEW_TAB,
         MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
-        MTD_GETSEQ, MTD_SHIFTSEQ,
-        MTD_ON_TAP, MTD_FIND_TAB,
+        MTD_GETSEQ, MTD_SHIFTSEQ, MTD_FIND_TAB,
+        MTD_ON_TAP, MTD_ON_UNDO,
         MTD_INIT_SYMS, MTD_TOKDIR, MTD_TOKTYPE,
         
     ] = sym_gen();
@@ -45,11 +45,16 @@ jQuery('document').ready(() => {
     class c_board {
         
         constructor(game, slen) {
+            this[MTD_INIT_SYMS]();
             this[PR_GAME] = game;
             this[PR_TAB_SIZE] = game.size;
             this[PR_SEQ_LEN] = slen;
             this[PR_AB_ANIMDUR] = 200;
             this[FLG_AB_BUSSY] = false;
+        }
+        
+        [MTD_INIT_SYMS]() {
+            this.sym_undo = '\u238c';
         }
         
         [MTD_NEW_ELEM]() {
@@ -65,7 +70,8 @@ jQuery('document').ready(() => {
             let elem = ELEM('ars_pad', 'ar_pad');
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
             let toknum = ELEM('ars_lefttok', 'ar_lefttok');
-            let undo = ELEM('ars_pad_button', 'ar_undo');
+            let undo = ELEM('ars_pad_button', 'ar_undo').text(this.sym_undo);
+            undo.on('tap', e => this[MTD_ON_UNDO]());
             cnsl.append(toknum, undo);
             let [tokseq, stab] = this[MTD_NEW_TAB]('tokseq', [this[PR_SEQ_LEN], 1]);
             this[PR_AB_SEQ] = stab;
@@ -285,7 +291,13 @@ jQuery('document').ready(() => {
             if(!(await this[PR_GAME].move(this, spos, pos))) {
                 return;
             }
-            
+        }
+        
+        async [MTD_ON_UNDO]() {
+            if(this[FLG_AB_BUSSY]) {
+                return;
+            }
+            await this[PR_GAME].undo(this);
         }
         
         peek(pos) {
@@ -419,18 +431,31 @@ jQuery('document').ready(() => {
             } else if(ttyp === 'forward') {
                 let ntok = this.take_tok();
                 let otok = await bd.shift(spos, dir, ntok);
-                this[PL_REC].push([ttyp, dir, ntok, otok]);
+                this[PL_REC].push([ttyp, spos, dir, ntok, otok]);
                 return true;
             } else if(ttyp === 'sideward') {
                 bd.shift(spos, dir);
-                await this[PL_REC].push([ttyp, dir]);
+                await this[PL_REC].push([ttyp, spos, dir]);
                 return true;
             }
             return false;
         }
         
-        async undo(bd, spos) {
-            
+        async undo(bd) {
+            if(this[PL_REC].length === 0) {
+                return false;
+            }
+            let [ttyp, spos, dir, ...rm] = this[PL_REC].pop();
+            if(ttyp === 'forward') {
+                let [ntok, otok] = rm;
+                let pbtok = await bd.shift(spos, dir, otok, true);
+                this.putback_tok(pbtok);
+                return true;
+            } else if(ttyp === 'sideward') {
+                await bd.shift(spos, dir, null, true);
+                return true;
+            }
+            return false;
         }
         
     }
