@@ -439,6 +439,6 @@ jQuery('document').ready(() => {
     /*const*/ game = new c_arrdun([3, 3], 16, 'hello world');
     /*const*/ board = new c_board(game, 3);
     scene.append(board.elem);
-    $('body').append(scene);
+    $('#main').append(scene);
     
 });
