@@ -415,7 +415,7 @@ jQuery('document').ready(() => {
             }
         }
         
-        get log() {
+        get recs() {
             return this[PL_REC];
         }
         
@@ -426,36 +426,57 @@ jQuery('document').ready(() => {
             }
             let dir = [dpos[0] - spos[0], dpos[1] - spos[1]];
             let ttyp = this[MTD_TOKTYPE](tok, dir);
-            if(ttyp === 'backward') {
-                return false;
-            } else if(ttyp === 'forward') {
+            if(ttyp === 'forward') {
                 let ntok = this.take_tok();
                 let otok = await bd.shift(spos, dir, ntok);
-                this[PL_REC].push([ttyp, spos, dir, ntok, otok]);
-                return true;
+                this[PL_REC].push([this[PL_REC].length, ttyp, spos, dir, ntok, otok]);
             } else if(ttyp === 'sideward') {
-                bd.shift(spos, dir);
-                await this[PL_REC].push([ttyp, spos, dir]);
-                return true;
+                await bd.shift(spos, dir);
+                this[PL_REC].push([this[PL_REC].length, ttyp, spos, dir]);
+            } else {
+                return false;
             }
-            return false;
+            return true;
         }
         
         async undo(bd) {
             if(this[PL_REC].length === 0) {
                 return false;
             }
-            let [ttyp, spos, dir, ...rm] = this[PL_REC].pop();
+            let [idx, ttyp, spos, dir, ...rm] = this[PL_REC].pop();
             if(ttyp === 'forward') {
                 let [ntok, otok] = rm;
                 let pbtok = await bd.shift(spos, dir, otok, true);
                 this.putback_tok(pbtok);
-                return true;
             } else if(ttyp === 'sideward') {
                 await bd.shift(spos, dir, null, true);
-                return true;
+            } else {
+                return false;
             }
-            return false;
+            return true;
+        }
+        
+        async load(bd, seed, recs) {
+            if(this[PR_SEED] !== seed) {
+                return false;
+            }
+            for(let [idx, ttyp, spos, dir, ...rm] of recs) {
+                if(idx !== this[PL_REC].length) {
+                    throw Error('unmatch record');
+                }
+                if(ttyp === 'forward') {
+                    let [ntok, otok] = rm;
+                    let potok = await bd.shift(spos, dir, ntok);
+                    if(otok !== potok) {
+                        throw Error('unmatch record');
+                    }
+                    this[PL_REC].push([this[PL_REC].length, ttyp, spos, dir, ntok, otok]);
+                } else if(ttyp === 'sideward') {
+                    await bd.shift(spos, dir);
+                    this[PL_REC].push([this[PL_REC].length, ttyp, spos, dir]);
+                }
+            }
+            return true;
         }
         
     }
