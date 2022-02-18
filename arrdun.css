@@ -1,6 +1,15 @@
 
-.ars_tab {
+.ars_lefttok {
+    width: 100px;
+    height: 30px;
+}
+
+.ars_pad_button {
+    /*float: right;*/
     border: 1px solid;
+    /*position: relative;*/
+    width: 50px;
+    height: 30px;
 }
 
 .ars_unit {

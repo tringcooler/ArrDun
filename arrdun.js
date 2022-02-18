@@ -12,14 +12,15 @@ jQuery('document').ready(() => {
     
     const [
         
-        PR_ELEM, PR_GAME, PR_PRNG,
+        PR_ELEM, PR_GAME, PR_SEED, PR_PRNG,
         PR_TAB_SIZE, PR_SEQ_LEN,
         PR_AB_TAB, PR_AB_SEQ, PR_AB_ANIMDUR,
         PR_TOK_DONE, PR_TOK_CNT,
-        PL_TOK_CACHE,
+        PL_TOK_CACHE, PL_REC,
         FLG_AB_BUSSY,
         
-        MTD_NEW_ELEM, MTD_NEW_UNIT, MTD_NEW_TAB,
+        MTD_NEW_ELEM, MTD_NEW_PAD,
+        MTD_NEW_UNIT, MTD_NEW_TAB,
         MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
         MTD_GETSEQ, MTD_SHIFTSEQ,
         MTD_ON_TAP, MTD_FIND_TAB,
@@ -29,7 +30,17 @@ jQuery('document').ready(() => {
     
     const
         CALLABLE = (f) => f instanceof Function,
-        RLIM = (v, a, b) => Math.max(a, Math.min(b, v));
+        RLIM = (v, a, b) => Math.max(a, Math.min(b, v)),
+        ELEM = (cls, id, etag = 'div') => {
+            let e = $('<'+etag+'>');
+            if(cls) {
+                e = e.addClass(cls);
+            }
+            if(id) {
+                e = e.attr('id', id);
+            }
+            return e;
+        };
     
     class c_board {
         
@@ -42,20 +53,28 @@ jQuery('document').ready(() => {
         }
         
         [MTD_NEW_ELEM]() {
-            let elem = $('<div>')
-                .addClass('ars_board')
-                .attr('id', 'ar_board');
-            let [stelem, stab] = this[MTD_NEW_TAB]('seq', [this[PR_SEQ_LEN], 1]);
+            let elem = ELEM('ars_board', 'ar_board');
+            let pdelem = this[MTD_NEW_PAD]();
             let [mtelem, mtab] = this[MTD_NEW_TAB]('main', this[PR_TAB_SIZE], true);
-            elem.append(stelem).append(mtelem);
             this[PR_AB_TAB] = mtab;
+            elem.append(pdelem).append(mtelem);
+            return elem;
+        }
+        
+        [MTD_NEW_PAD]() {
+            let elem = ELEM('ars_pad', 'ar_pad');
+            let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
+            let toknum = ELEM('ars_lefttok', 'ar_lefttok');
+            let undo = ELEM('ars_pad_button', 'ar_undo');
+            cnsl.append(toknum, undo);
+            let [tokseq, stab] = this[MTD_NEW_TAB]('tokseq', [this[PR_SEQ_LEN], 1]);
             this[PR_AB_SEQ] = stab;
+            elem.append(cnsl, tokseq);
             return elem;
         }
         
         [MTD_NEW_UNIT](val) {
-            let uelem = $('<div>')
-                .addClass('ars_unit');
+            let uelem = ELEM('ars_unit');
             uelem.text(val);
             return uelem;
         }
@@ -63,17 +82,15 @@ jQuery('document').ready(() => {
         [MTD_NEW_TAB](name, size, tap = false) {
             let id = 'ar_tab_' + name;
             let [sw, sh] = size;
-            let elem = $('<table>')
-                .addClass('ars_tab')
-                .attr('id', id);
+            let elem = ELEM('ars_tab', id, 'table');
             let tab = [];
             for(let y = 0; y < sh; y++) {
-                let relem = $('<tr>').addClass('ars_row');
+                let relem = ELEM('ars_row', null, 'tr');
                 elem.append(relem);
                 let row = [];
                 tab.push(row);
                 for(let x = 0; x < sw; x++) {
-                    let celem = $('<td>').addClass('ars_cell');
+                    let celem = ELEM('ars_cell', null, 'td');;
                     if(tap) {
                         celem.on('tap', e => this[MTD_ON_TAP]([x, y]));
                     }
@@ -100,7 +117,7 @@ jQuery('document').ready(() => {
         }
         
         [MTD_GETTOK](uelem) {
-            return uelem.text();
+            return uelem?.text?.() ?? null;
         }
         
         [MTD_DIST](e1, e2) {
@@ -189,11 +206,11 @@ jQuery('document').ready(() => {
             }
         }
         
-        async shift(spos, dir, extra = null, rvs = false) {
+        async shift(spos, dir, extra = null, rvs = false, dur = null) {
             if(this[FLG_AB_BUSSY]) {
                 throw Error('bussy');
             }
-            let dur = this[PR_AB_ANIMDUR];
+            dur = dur ?? this[PR_AB_ANIMDUR];
             this[FLG_AB_BUSSY] = true;
             let pushed = ((extra ?? null) !== null);
             if(!pushed) {
@@ -241,7 +258,7 @@ jQuery('document').ready(() => {
                 },
             );
             this[FLG_AB_BUSSY] = false;
-            return first;
+            return this[MTD_GETTOK](first);
         }
         
         [MTD_FIND_TAB](tab, tok) {
@@ -260,12 +277,12 @@ jQuery('document').ready(() => {
             return [-1, -1];
         }
         
-        [MTD_ON_TAP](pos) {
+        async [MTD_ON_TAP](pos) {
             if(this[FLG_AB_BUSSY]) {
                 return;
             }
             let spos = this[MTD_FIND_TAB](this[PR_AB_TAB], this[PR_GAME].sym_char);
-            if(!this[PR_GAME].move(this, spos, pos)) {
+            if(!(await this[PR_GAME].move(this, spos, pos))) {
                 return;
             }
             
@@ -284,13 +301,20 @@ jQuery('document').ready(() => {
     
     class c_arrdun {
         
-        constructor(size, toknum, prng) {
+        constructor(size, toknum, seed) {
+            this[MTD_INIT_SYMS]();
             this[PR_TAB_SIZE] = size;
             this[PR_TOK_DONE] = toknum;
-            this[PR_PRNG] = prng;
+            this[PR_SEED] = seed;
+            this.reset();
+        }
+        
+        reset() {
+            this[PR_PRNG] = PRNG(this[PR_SEED]);
             this[PL_TOK_CACHE] = [];
             this[PR_TOK_CNT] = 0;
-            this[MTD_INIT_SYMS]();
+            this[PL_REC] = [];
+            return this;
         }
         
         get size() {
@@ -301,7 +325,6 @@ jQuery('document').ready(() => {
             this.sym_char = '@';
             this.sym_dir = ['\u21e8', '\u21e9', '\u21e6', '\u21e7'];
             this.sym_done = '*';
-            //undo \u238c
         }
         
         [MTD_TOKDIR](tok, rvs = false) {
@@ -380,7 +403,11 @@ jQuery('document').ready(() => {
             }
         }
         
-        move(bd, spos, dpos) {
+        get log() {
+            return this[PL_REC];
+        }
+        
+        async move(bd, spos, dpos) {
             let tok = bd.peek(dpos);
             if(!tok) {
                 return false;
@@ -390,19 +417,26 @@ jQuery('document').ready(() => {
             if(ttyp === 'backward') {
                 return false;
             } else if(ttyp === 'forward') {
-                bd.shift(spos, dir, this.take_tok());
+                let ntok = this.take_tok();
+                let otok = await bd.shift(spos, dir, ntok);
+                this[PL_REC].push([ttyp, dir, ntok, otok]);
                 return true;
             } else if(ttyp === 'sideward') {
                 bd.shift(spos, dir);
+                await this[PL_REC].push([ttyp, dir]);
                 return true;
             }
             return false;
         }
         
+        async undo(bd, spos) {
+            
+        }
+        
     }
     
-    const scene = $('<div>').addClass('ars_scene');
-    /*const*/ game = new c_arrdun([3, 3], 16, PRNG('hello world'));
+    const scene = ELEM('ars_scene', 'ar_scene');
+    /*const*/ game = new c_arrdun([3, 3], 16, 'hello world');
     /*const*/ board = new c_board(game, 3);
     scene.append(board.elem);
     $('body').append(scene);
