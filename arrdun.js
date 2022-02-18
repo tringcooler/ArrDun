@@ -12,17 +12,18 @@ jQuery('document').ready(() => {
     
     const [
         
-        PR_ELEM,
+        PR_ELEM, PR_GAME, PR_PRNG,
         PR_TAB_SIZE, PR_SEQ_LEN,
-        PR_AB_TAB, PR_AB_SEQ,
-        PR_AB_CB_INIT, PR_AB_CB_TAP,
-        PR_GM_BOARD,
+        PR_AB_TAB, PR_AB_SEQ, PR_AB_ANIMDUR,
+        PR_TOK_DONE, PR_TOK_CNT,
+        PL_TOK_CACHE,
         FLG_AB_BUSSY,
         
         MTD_NEW_ELEM, MTD_NEW_UNIT, MTD_NEW_TAB,
-        MTD_GETUNIT, MTD_DIST,
+        MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
         MTD_GETSEQ, MTD_SHIFTSEQ,
         MTD_ON_TAP, MTD_FIND_TAB,
+        MTD_INIT_SYMS, MTD_TOKDIR, MTD_TOKTYPE,
         
     ] = sym_gen();
     
@@ -32,11 +33,11 @@ jQuery('document').ready(() => {
     
     class c_board {
         
-        constructor(size, len, cb_init = null, cb_tap = null) {
-            this[PR_TAB_SIZE] = size;
-            this[PR_SEQ_LEN] = len;
-            this[PR_AB_CB_INIT] = CALLABLE(cb_init) ? cb_init : null;
-            this[PR_AB_CB_TAP] = CALLABLE(cb_tap) ? cb_tap : null;
+        constructor(game, slen) {
+            this[PR_GAME] = game;
+            this[PR_TAB_SIZE] = game.size;
+            this[PR_SEQ_LEN] = slen;
+            this[PR_AB_ANIMDUR] = 200;
             this[FLG_AB_BUSSY] = false;
         }
         
@@ -77,7 +78,7 @@ jQuery('document').ready(() => {
                         celem.on('tap', e => this[MTD_ON_TAP]([x, y]));
                     }
                     relem.append(celem);
-                    let v = this[PR_AB_CB_INIT]?.([x, y], name) ?? '';
+                    let v = this[PR_GAME].init_tok(name, [x, y]);
                     let uelem = this[MTD_NEW_UNIT](v);
                     celem.append(uelem);
                     row.push(celem);
@@ -96,6 +97,10 @@ jQuery('document').ready(() => {
         [MTD_GETUNIT](celem) {
             //return celem.find('.ars_unit');
             return celem.children(0);
+        }
+        
+        [MTD_GETTOK](uelem) {
+            return uelem.text();
         }
         
         [MTD_DIST](e1, e2) {
@@ -184,10 +189,11 @@ jQuery('document').ready(() => {
             }
         }
         
-        async shift(spos, dir, extra = null, rvs = false, dur = 200) {
+        async shift(spos, dir, extra = null, rvs = false) {
             if(this[FLG_AB_BUSSY]) {
                 throw Error('bussy');
             }
+            let dur = this[PR_AB_ANIMDUR];
             this[FLG_AB_BUSSY] = true;
             let pushed = ((extra ?? null) !== null);
             if(!pushed) {
@@ -238,22 +244,15 @@ jQuery('document').ready(() => {
             return first;
         }
         
-        [MTD_ON_TAP](pos) {
-            if(this[FLG_AB_BUSSY]) {
-                return;
-            }
-            this[PR_AB_CB_TAP]?.(pos);
-        }
-        
-        [MTD_FIND_TAB](tab, val) {
+        [MTD_FIND_TAB](tab, tok) {
             let rlen = tab.length;
             for(let y = 0; y < rlen; y++) {
                 let row = tab[y];
                 let clen = row.length;
                 for(let x = 0; x < clen; x++) {
                     let celem = row[x];
-                    let uelem = this[MTD_GETUNIT](celem);
-                    if(uelem.text() === val) {
+                    let ctok = this[MTD_GETTOK](this[MTD_GETUNIT](celem));
+                    if(ctok === tok) {
                         return [x, y];
                     }
                 }
@@ -261,61 +260,151 @@ jQuery('document').ready(() => {
             return [-1, -1];
         }
         
-        findtab(val) {
-            return this[MTD_FIND_TAB](this[PR_AB_TAB], val);
+        [MTD_ON_TAP](pos) {
+            if(this[FLG_AB_BUSSY]) {
+                return;
+            }
+            let spos = this[MTD_FIND_TAB](this[PR_AB_TAB], this[PR_GAME].sym_char);
+            if(!this[PR_GAME].move(this, spos, pos)) {
+                return;
+            }
+            
         }
         
-        findseq(val) {
-            return this[MTD_FIND_TAB](this[PR_AB_SEQ], val);
+        peek(pos) {
+            let [x, y] = pos;
+            let celem = this[PR_AB_TAB][y]?.[x];
+            if(!celem) {
+                return null;
+            }
+            return this[MTD_GETTOK](this[MTD_GETUNIT](celem));
         }
         
     }
-    let cnt = 0;
+    
     class c_arrdun {
         
-        constructor(size, slen) {
+        constructor(size, toknum, prng) {
             this[PR_TAB_SIZE] = size;
-            this[PR_SEQ_LEN] = slen;
-            this[PR_GM_BOARD] = new c_board(
-                size, slen,
-                (p, n) => this.init_val(n, p[0], p[1]),
-                p => this.move_to(p[0], p[1]),
-            );
+            this[PR_TOK_DONE] = toknum;
+            this[PR_PRNG] = prng;
+            this[PL_TOK_CACHE] = [];
+            this[PR_TOK_CNT] = 0;
+            this[MTD_INIT_SYMS]();
         }
         
-        get board() {
-            return this[PR_GM_BOARD];
+        get size() {
+            return this[PR_TAB_SIZE];
         }
         
-        init_val(n, x, y) {
+        [MTD_INIT_SYMS]() {
+            this.sym_char = '@';
+            this.sym_dir = ['\u21e8', '\u21e9', '\u21e6', '\u21e7'];
+            this.sym_done = '*';
+            //undo \u238c
+        }
+        
+        [MTD_TOKDIR](tok, rvs = false) {
+            let ti = this.sym_dir.indexOf(tok);
+            if(ti < 0) {
+                return null;
+            }
+            let dx = ((ti + 1) % 2) * (1 - ti);
+            let dy = (ti % 2) * (2 - ti);
+            if(rvs) {
+                return [-dx, -dy];
+            } else {
+                return [dx, dy];
+            }
+        }
+        
+        take_tok() {
+            if(this[PL_TOK_CACHE].length > 0) {
+                this[PR_TOK_CNT] ++;
+                return this[PL_TOK_CACHE].pop();
+            } else if(this[PR_TOK_CNT]++ === this[PR_TOK_DONE]) {
+                return this.sym_done;
+            }
+            let rnd = Math.floor(this[PR_PRNG]() * 4);
+            return this.sym_dir[rnd];
+        }
+        
+        putback_tok(tok) {
+            if(this[PR_TOK_CNT] === 0) {
+                throw Error('putback failed');
+            }
+            this[PR_TOK_CNT] --;
+            this[PL_TOK_CACHE].push(tok);
+        }
+        
+        init_tok(tabname, pos) {
+            let [x, y] = pos;
             let [w, h] = this[PR_TAB_SIZE];
-            if(n == 'main') {
-                if(x == Math.floor(w / 2) && y == Math.floor(h / 2)) {
-                    return '@';
+            if(tabname === 'main') {
+                let cx = Math.floor(w / 2);
+                let cy = Math.floor(h / 2);
+                if(x === cx && y === cy ) {
+                    return this.sym_char;
+                } else if(x === cx && Math.abs(y - cy) === 1) {
+                    return this.sym_dir[cy - y + 2];
+                } else if(y === cy && Math.abs(x - cx) === 1) {
+                    return this.sym_dir[cx - x + 1];
                 } else {
-                    return ++cnt;//'->';
+                    return this.take_tok();
                 }
             } else {
-                return ++cnt+100;
+                return this.take_tok();
             }
         }
         
-        move_to(x, y) {
-            let bd = this[PR_GM_BOARD];
-            let [sx, sy] = bd.findtab('@');
-            let dx = x - sx;
-            let dy = y - sy;
-            if(Math.abs(dx) + Math.abs(dy) !== 1) {
-                return;
+        [MTD_TOKTYPE](tok, dir) {
+            let [dx, dy] = dir;
+            if(tok === this.sym_done) {
+                return 'done';
+            } else {
+                let tokdir = this[MTD_TOKDIR](tok);
+                if(!tokdir) {
+                    return 'others';
+                }
+                if(Math.abs(dx) + Math.abs(dy) !== 1) {
+                    return 'range';
+                }
+                let [tx, ty] = tokdir;
+                if(tx === dx && ty === dy) {
+                    return 'forward';
+                } else if(tx === -dx || ty === -dy) {
+                    return 'backward';
+                } else {
+                    return 'sideward';
+                }
             }
-            bd.shift([sx, sy], [dx, dy]);
+        }
+        
+        move(bd, spos, dpos) {
+            let tok = bd.peek(dpos);
+            if(!tok) {
+                return false;
+            }
+            let dir = [dpos[0] - spos[0], dpos[1] - spos[1]];
+            let ttyp = this[MTD_TOKTYPE](tok, dir);
+            if(ttyp === 'backward') {
+                return false;
+            } else if(ttyp === 'forward') {
+                bd.shift(spos, dir, this.take_tok());
+                return true;
+            } else if(ttyp === 'sideward') {
+                bd.shift(spos, dir);
+                return true;
+            }
+            return false;
         }
         
     }
     
     const scene = $('<div>').addClass('ars_scene');
-    /*const*/ game = new c_arrdun([3, 5], 3);
-    scene.append(game.board.elem);
+    /*const*/ game = new c_arrdun([3, 3], 16, PRNG('hello world'));
+    /*const*/ board = new c_board(game, 3);
+    scene.append(board.elem);
     $('body').append(scene);
     
 });
