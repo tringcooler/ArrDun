@@ -175,6 +175,9 @@ const ARSCORE = (() => {
                     let dv = val - last_val;
                     c = this.syms.arrs[((dv % 4) + 4) % 4];
                 }
+                if(val >= 4) {
+                    c += this.syms.star;
+                }
                 last_val = val;
                 rs += c;
             }

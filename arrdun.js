@@ -89,7 +89,7 @@ jQuery('document').ready(() => {
             let uelem = ELEM('ars_unit');
             uelem.text(tok);
             let ttyp = this[PR_GAME].toktype(tok);
-            if(['char', 'done'].includes(ttyp)) {
+            if(['char', 'block'].includes(ttyp)) {
                 uelem.addClass('ars_utyp_' + ttyp);
             }
             return uelem;
@@ -381,6 +381,18 @@ jQuery('document').ready(() => {
             return this[MTD_GETTOK](this[MTD_GETUNIT](celem));
         }
         
+        peekseq(idx = 0) {
+            let celem = this[PR_AB_SEQ][0][idx];
+            if(!celem) {
+                return null;
+            }
+            return this[MTD_GETTOK](this[MTD_GETUNIT](celem));
+        }
+        
+        levelup() {
+            console.log('level up');
+        }
+        
     }
     
     class c_arrdun {
@@ -478,7 +490,7 @@ jQuery('document').ready(() => {
             if(tok === this.sym_char) {
                 return 'char';
             } else if(tok === this.sym_block) {
-                return 'done';
+                return 'block';
             } else if(dir) {
                 let [dx, dy] = dir;
                 let tokdir = this[MTD_TOKDIR](tok);
@@ -504,8 +516,12 @@ jQuery('document').ready(() => {
         [MTD_REC_TO_SCVAL](rec) {
             let [ttyp, spos, dir, ...rm] = rec;
             if(ttyp === 'forward') {
-                let [ntok, otok] = rm;
-                return this.sym_dir.indexOf(otok);
+                let [ntok, otok, tptok] = rm;
+                let v = this.sym_dir.indexOf(otok);
+                if(tptok === this.sym_block) {
+                    v += 4;
+                }
+                return v;
             } else if(ttyp === 'sideward') {
                 return null;
             } else {
@@ -548,9 +564,13 @@ jQuery('document').ready(() => {
             let dir = [dpos[0] - spos[0], dpos[1] - spos[1]];
             let ttyp = this.toktype(tok, dir);
             if(ttyp === 'forward') {
+                let tptok = bd.peekseq();
                 let ntok = this.take_tok();
                 let otok = await bd.shift(spos, dir, ntok);
-                this[MTD_REC_PUSH](ttyp, spos, dir, ntok, otok);
+                this[MTD_REC_PUSH](ttyp, spos, dir, ntok, otok, tptok);
+                if(tptok === this.sym_block) {
+                    bd.levelup();
+                }
             } else if(ttyp === 'sideward') {
                 await bd.shift(spos, dir);
                 this[MTD_REC_PUSH](ttyp, spos, dir);
@@ -565,7 +585,7 @@ jQuery('document').ready(() => {
             if(!ttyp) {
                 return false;
             } else if(ttyp === 'forward') {
-                let [ntok, otok] = rm;
+                let [ntok, otok, tptok] = rm;
                 let pbtok = await bd.shift(spos, dir, otok, true);
                 this.putback_tok(pbtok);
             } else if(ttyp === 'sideward') {
@@ -596,12 +616,12 @@ jQuery('document').ready(() => {
             }
             for(let [ttyp, spos, dir, ...rm] of recs) {
                 if(ttyp === 'forward') {
-                    let [ntok, otok] = rm;
+                    let [ntok, otok, tptok] = rm;
                     let potok = await bd.shift(spos, dir, ntok);
                     if(otok !== potok) {
                         throw Error('unmatch record');
                     }
-                    this[MTD_REC_PUSH](ttyp, spos, dir, ntok, otok);
+                    this[MTD_REC_PUSH](ttyp, spos, dir, ...rm);
                 } else if(ttyp === 'sideward') {
                     await bd.shift(spos, dir);
                     this[MTD_REC_PUSH](ttyp, spos, dir);
