@@ -4,7 +4,7 @@ jQuery('document').ready(() => {
     
     const [
         
-        PR_ELEM, PR_GAME, PR_SEED, PR_PRNG,
+        PR_ELEM, PR_GAME, PR_SEED, PR_PRNG, PR_SCORE,
         PR_TAB_SIZE, PR_SEQ_LEN,
         PR_AB_TAB, PR_AB_SEQ, PR_AB_PAD, PR_AB_ANIMDUR,
         PR_TOK_DONE, PR_TOK_CNT,
@@ -19,6 +19,7 @@ jQuery('document').ready(() => {
         MTD_ON_TAP, MTD_ON_UNDO,
         MTD_INIT_SYMS, MTD_TOKDIR,
         MTD_REC_PUSH, MTD_REC_POP,
+        MTD_REC_TO_SCVAL,
         
     ] = (function*() {
         while(true) {
@@ -382,6 +383,7 @@ jQuery('document').ready(() => {
             this[PR_TAB_SIZE] = size;
             this[PR_TOK_DONE] = toknum;
             this[PR_SEED] = seed;
+            this[PR_SCORE] = new ARSCORE(Math.round(Math.sqrt(toknum)));
             this.reset();
         }
         
@@ -390,6 +392,7 @@ jQuery('document').ready(() => {
             this[PL_TOK_CACHE] = [];
             this[PR_TOK_CNT] = 0;
             this[PL_REC] = [];
+            this[PR_SCORE].reset();
             return this;
         }
         
@@ -487,15 +490,43 @@ jQuery('document').ready(() => {
             }
         }
         
-        [MTD_REC_PUSH](...args) {
-            this[PL_REC].push(args);
+        [MTD_REC_TO_SCVAL](rec) {
+            let [ttyp, spos, dir, ...rm] = rec;
+            if(ttyp === 'forward') {
+                let [ntok, otok] = rm;
+                return this.sym_dir.indexOf(otok);
+            } else if(ttyp === 'sideward') {
+                return null;
+            } else {
+                return undefined;
+            }
+        }
+        
+        [MTD_REC_PUSH](...rec) {
+            this[PL_REC].push(rec);
+            let scval = this[MTD_REC_TO_SCVAL](rec);
+            if(scval !== undefined) {
+                this[PR_SCORE].put(scval);
+            }
         }
         
         [MTD_REC_POP]() {
             if(this[PL_REC].length === 0) {
                 return [];
             }
-            return this[PL_REC].pop();
+            let prec = this[PL_REC].pop();
+            this[PR_SCORE].reset();
+            for(let rec of this[PL_REC]) {
+                let scval = this[MTD_REC_TO_SCVAL](rec);
+                if(scval !== undefined) {
+                    this[PR_SCORE].put(scval);
+                }
+            }
+            return prec;
+        }
+        
+        get score() {
+            return this[PR_SCORE].score();
         }
         
         async move(bd, spos, dpos) {

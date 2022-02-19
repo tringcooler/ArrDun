@@ -102,7 +102,8 @@ const ARSCORE = (() => {
         constructor(std_wid) {
             this.syms = {
                 miss: '\u26aa',
-                arrs: ['\u27a1', '\u2935', '\u2934'],
+                arrs: ['\u27a1', '\u2935', '\u2934', '\u21a9'],
+                star: '\u2747',
             };
             this[PR_STD_WID] = std_wid;
             this.reset();
@@ -116,7 +117,9 @@ const ARSCORE = (() => {
         
         put(val = null) {
             let seq = this[PL_SEQBUF];
-            seq.push(val);
+            if(val !== null || seq.length > 0) {
+                seq.push(val);
+            }
             if(val === null) {
                 this[MTD_ADD_SEQ]();
             }
@@ -129,10 +132,10 @@ const ARSCORE = (() => {
             }
         }
         
-        [MTD_ADD_SEQ]() {
+        [MTD_ADD_SEQ](temp = false) {
             let slen = this[PL_SEQBUF].length;
             if(slen === 0) {
-                return
+                return this[PL_LINEBUF];
             }
             let llen = this[PL_LINEBUF].length;
             let l1 = llen + slen - this[PR_STD_WID];
@@ -140,8 +143,12 @@ const ARSCORE = (() => {
             if(llen > 0 && l1 > l2) {
                 this[MTD_ADD_LINE]();
             }
-            this[PL_LINEBUF] = this[PL_LINEBUF].concat(this[PL_SEQBUF]);
-            this[PL_SEQBUF] = [];
+            let nline = this[PL_LINEBUF].concat(this[PL_SEQBUF]);
+            if(!temp) {
+                this[PL_LINEBUF] = nline;
+                this[PL_SEQBUF] = [];
+            }
+            return nline;
         }
         
         [MTD_ADD_LINE]() {
@@ -171,8 +178,9 @@ const ARSCORE = (() => {
         }
         
         score() {
+            let line = this[MTD_ADD_SEQ](true);
             let mat = this[PL_MATBUF];
-            let line = this[PL_LINEBUF];
+            console.log(mat, line, this[PL_LINEBUF], this[PL_SEQBUF]);
             if(line.length > 0) {
                 mat = [...mat, this[MTD_LINESTR](line)];
             }
