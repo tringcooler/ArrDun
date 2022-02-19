@@ -125,8 +125,10 @@ jQuery('document').ready(() => {
         }
         
         async start() {
+            this[FLG_AB_BUSSY] = true;
             this[MTD_UPDATE_SCORE]();
             await this[MTD_UPDATE_MTAB]();
+            this[FLG_AB_BUSSY] = false;
         }
         
         [MTD_GETUNIT](celem) {
@@ -349,7 +351,12 @@ jQuery('document').ready(() => {
                 return;
             }
             this[FLG_AB_BUSSY] = true;
-            await this[PR_GAME].undo(this);
+            if(!(await this[PR_GAME].undo(this))) {
+                this[FLG_AB_BUSSY] = false;
+                return;
+            }
+            this[MTD_UPDATE_SCORE]();
+            await this[MTD_UPDATE_MTAB]();
             this[FLG_AB_BUSSY] = false;
         }
         
