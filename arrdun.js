@@ -18,6 +18,7 @@ jQuery('document').ready(() => {
         MTD_UPDATE_MTAB, MTD_UPDATE_SCORE,
         MTD_ON_TAP, MTD_ON_UNDO,
         MTD_INIT_SYMS, MTD_TOKDIR,
+        MTD_REC_PUSH, MTD_REC_POP,
         
     ] = (function*() {
         while(true) {
@@ -291,9 +292,12 @@ jQuery('document').ready(() => {
         async [MTD_UPDATE_MTAB](dur = null) {
             dur = dur ?? this[PR_AB_ANIMDUR];
             let tab = this[PR_AB_TAB];
+            let seq = this[PR_AB_SEQ][0];
             let prms = [];
             let spos = this[MTD_FIND_TAB](tab, this[PR_GAME].sym_char);
             let rlen = tab.length;
+            let utyps = ['forward', 'backward', 'sideward'];
+            let s_utyps = utyps.map(v=>'ars_utyp_'+v).join(' ');
             for(let y = 0; y < rlen; y++) {
                 let row = tab[y];
                 let clen = row.length;
@@ -303,7 +307,6 @@ jQuery('document').ready(() => {
                     let ctok = this[MTD_GETTOK](uelem);
                     let dir = [x - spos[0], y - spos[1]];
                     let ttyp = this[PR_GAME].toktype(ctok, dir);
-                    let utyps = ['forward', 'backward', 'sideward'];
                     let uti = utyps.indexOf(ttyp);
                     if(uti >= 0) {
                         prms.push(
@@ -313,11 +316,16 @@ jQuery('document').ready(() => {
                         );
                     } else {
                         prms.push(
-                            uelem.removeClass(
-                                utyps.map(v=>'ars_utyp_'+v).join(' '), dur).promise()
+                            uelem.removeClass(s_utyps, dur).promise()
                         );
                     }
                 }
+            }
+            for(let celem of seq) {
+                let uelem = this[MTD_GETUNIT](celem);
+                prms.push(
+                    uelem.removeClass(s_utyps, dur).promise()
+                );
             }
             await Promise.all(prms);
         }
@@ -479,6 +487,17 @@ jQuery('document').ready(() => {
             }
         }
         
+        [MTD_REC_PUSH](...args) {
+            this[PL_REC].push(args);
+        }
+        
+        [MTD_REC_POP]() {
+            if(this[PL_REC].length === 0) {
+                return [];
+            }
+            return this[PL_REC].pop();
+        }
+        
         async move(bd, spos, dpos) {
             let tok = bd.peek(dpos);
             if(!tok) {
@@ -489,10 +508,10 @@ jQuery('document').ready(() => {
             if(ttyp === 'forward') {
                 let ntok = this.take_tok();
                 let otok = await bd.shift(spos, dir, ntok);
-                this[PL_REC].push([ttyp, spos, dir, ntok, otok]);
+                this[MTD_REC_PUSH](ttyp, spos, dir, ntok, otok);
             } else if(ttyp === 'sideward') {
                 await bd.shift(spos, dir);
-                this[PL_REC].push([ttyp, spos, dir]);
+                this[MTD_REC_PUSH](ttyp, spos, dir);
             } else {
                 return false;
             }
@@ -500,11 +519,10 @@ jQuery('document').ready(() => {
         }
         
         async undo(bd) {
-            if(this[PL_REC].length === 0) {
+            let [ttyp, spos, dir, ...rm] = this[MTD_REC_POP]();
+            if(!ttyp) {
                 return false;
-            }
-            let [ttyp, spos, dir, ...rm] = this[PL_REC].pop();
-            if(ttyp === 'forward') {
+            } else if(ttyp === 'forward') {
                 let [ntok, otok] = rm;
                 let pbtok = await bd.shift(spos, dir, otok, true);
                 this.putback_tok(pbtok);
@@ -541,10 +559,10 @@ jQuery('document').ready(() => {
                     if(otok !== potok) {
                         throw Error('unmatch record');
                     }
-                    this[PL_REC].push([ttyp, spos, dir, ntok, otok]);
+                    this[MTD_REC_PUSH](ttyp, spos, dir, ntok, otok);
                 } else if(ttyp === 'sideward') {
                     await bd.shift(spos, dir);
-                    this[PL_REC].push([ttyp, spos, dir]);
+                    this[MTD_REC_PUSH](ttyp, spos, dir);
                 }
             }
             return true;
