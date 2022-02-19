@@ -2,14 +2,6 @@ jQuery('document').ready(() => {
     
     const $ =  jQuery;
     
-    const SCSYM = '▖▗▘▝ ▚▞ ▙▛▜▟';
-    
-    const sym_gen = function*() {
-        while(true) {
-            yield Symbol();
-        }
-    };
-    
     const [
         
         PR_ELEM, PR_GAME, PR_SEED, PR_PRNG,
@@ -27,7 +19,11 @@ jQuery('document').ready(() => {
         MTD_ON_TAP, MTD_ON_UNDO,
         MTD_INIT_SYMS, MTD_TOKDIR,
         
-    ] = sym_gen();
+    ] = (function*() {
+        while(true) {
+            yield Symbol();
+        }
+    })();
     
     const
         CALLABLE = (f) => f instanceof Function,
