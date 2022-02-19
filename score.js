@@ -122,26 +122,31 @@ const ARSCORE = (() => {
             }
         }
         
-        [MTD_ADD_SEQ](flush = false) {
-            let slen = this[PL_SEQBUF].length;
-            if(slen > 0) {
-                let llen = this[PL_LINEBUF].length;
-                let l1 = llen + slen - this[PR_STD_WID];
-                let l2 = this[PR_STD_WID] - llen;
-                if(llen > 0 && l1 > l2) {
-                    this[MTD_ADD_LINE]();
-                }
-                this[PL_LINEBUF] = this[PL_LINEBUF].concat(this[PL_SEQBUF]);
-                this[PL_SEQBUF] = [];
+        reload(seq) {
+            this.reset();
+            for(let val of seq) {
+                this.put(val);
             }
-            if(flush) {
+        }
+        
+        [MTD_ADD_SEQ]() {
+            let slen = this[PL_SEQBUF].length;
+            if(slen === 0) {
+                return
+            }
+            let llen = this[PL_LINEBUF].length;
+            let l1 = llen + slen - this[PR_STD_WID];
+            let l2 = this[PR_STD_WID] - llen;
+            if(llen > 0 && l1 > l2) {
                 this[MTD_ADD_LINE]();
             }
+            this[PL_LINEBUF] = this[PL_LINEBUF].concat(this[PL_SEQBUF]);
+            this[PL_SEQBUF] = [];
         }
         
         [MTD_ADD_LINE]() {
             let line = this[PL_LINEBUF];
-            if(line.length == 0) {
+            if(line.length === 0) {
                 return;
             }
             this[PL_MATBUF].push(
@@ -166,8 +171,12 @@ const ARSCORE = (() => {
         }
         
         score() {
-            this[MTD_ADD_SEQ](true);
-            return this[PL_MATBUF].join('\n');
+            let mat = this[PL_MATBUF];
+            let line = this[PL_LINEBUF];
+            if(line.length > 0) {
+                mat = [...mat, this[MTD_LINESTR](line)];
+            }
+            return mat.join('\n');
         }
         
     }
