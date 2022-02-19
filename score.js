@@ -184,20 +184,13 @@ const ARSCORE = (() => {
             if(line.length > 0) {
                 mat = [...mat, this[MTD_LINESTR](line)];
             }
-            return mat.join('\n');
+            let s = mat.join('\n');
+            if(!s) {
+                s = this.syms.miss;
+            }
+            return s;
         }
         
-    }
-    
-    test_score = (seq) => {
-        let sc = new c_score_emoji(5);
-        for(let num of seq) {
-            for(let i = 0; i < num; i++) {
-                sc.put(num);
-            }
-            sc.put(null);
-        }
-        return sc.score();
     }
     
     return c_score_emoji;
