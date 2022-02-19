@@ -7,7 +7,7 @@ jQuery('document').ready(() => {
         PR_ELEM, PR_GAME, PR_SEED, PR_PRNG, PR_SCORE,
         PR_TAB_SIZE, PR_SEQ_LEN,
         PR_AB_TAB, PR_AB_SEQ, PR_AB_PAD, PR_AB_ANIMDUR,
-        PR_TOK_DONE, PR_TOK_CNT,
+        PR_TOK_BLOCK, PR_TOK_CNT,
         PL_TOK_CACHE, PL_REC,
         FLG_AB_BUSSY,
         
@@ -337,7 +337,7 @@ jQuery('document').ready(() => {
         }
         
         [MTD_UPDATE_SCORE]() {
-            let tl = Math.max(0, this[PR_GAME].tokleft + this[PR_SEQ_LEN] + 1);
+            let tl = Math.max(0, this[PR_GAME].tokleft(this[PR_SEQ_LEN]));
             this[PR_AB_PAD].find('#ar_tokleft').text(tl > 0 ? tl : this.sym_inf);
             let sc = this[PR_GAME].score;
             this[PR_AB_PAD].find('#ar_score').text(sc ? sc : 'a');
@@ -388,7 +388,7 @@ jQuery('document').ready(() => {
         constructor(size, toknum, seed) {
             this[MTD_INIT_SYMS]();
             this[PR_TAB_SIZE] = size;
-            this[PR_TOK_DONE] = toknum;
+            this[PR_TOK_BLOCK] = toknum;
             this[PR_SEED] = seed;
             this[PR_SCORE] = new ARSCORE(Math.round(Math.sqrt(toknum)));
             this.reset();
@@ -407,14 +407,15 @@ jQuery('document').ready(() => {
             return this[PR_TAB_SIZE];
         }
         
-        get tokleft() {
-            return this[PR_TOK_DONE] - this[PR_TOK_CNT];
+        tokleft(shft = 0) {
+            let td = this[PR_TOK_BLOCK];
+            return td - (this[PR_TOK_CNT] - shft) % td;
         }
         
         [MTD_INIT_SYMS]() {
             this.sym_char = '@';
             this.sym_dir = ['\u21e8', '\u21e9', '\u21e6', '\u21e7'];
-            this.sym_done = '*';
+            this.sym_block = '*';
         }
         
         [MTD_TOKDIR](tok, rvs = false) {
@@ -431,12 +432,15 @@ jQuery('document').ready(() => {
             }
         }
         
-        take_tok() {
-            if(this[PL_TOK_CACHE].length > 0) {
+        take_tok(nocnt = false) {
+            let tcnt = this[PR_TOK_CNT];
+            if(!nocnt) {
                 this[PR_TOK_CNT] ++;
+            }
+            if(this[PL_TOK_CACHE].length > 0) {
                 return this[PL_TOK_CACHE].pop();
-            } else if(this[PR_TOK_CNT]++ === this[PR_TOK_DONE]) {
-                return this.sym_done;
+            } else if((tcnt + 1) % this[PR_TOK_BLOCK] === 0) {
+                return this.sym_block;
             }
             let rnd = Math.floor(this[PR_PRNG]() * 4);
             return this.sym_dir[rnd];
@@ -463,7 +467,7 @@ jQuery('document').ready(() => {
                 } else if(y === cy && Math.abs(x - cx) === 1) {
                     return this.sym_dir[cx - x + 1];
                 } else {
-                    return this.take_tok();
+                    return this.take_tok(true);
                 }
             } else {
                 return this.take_tok();
@@ -473,7 +477,7 @@ jQuery('document').ready(() => {
         toktype(tok, dir) {
             if(tok === this.sym_char) {
                 return 'char';
-            } else if(tok === this.sym_done) {
+            } else if(tok === this.sym_block) {
                 return 'done';
             } else if(dir) {
                 let [dx, dy] = dir;
@@ -575,7 +579,7 @@ jQuery('document').ready(() => {
         save() {
             return {
                 size: this[PR_TAB_SIZE],
-                tokd: this[PR_TOK_DONE],
+                tokd: this[PR_TOK_BLOCK],
                 seed: this[PR_SEED],
                 recs: this[PL_REC].slice(),
             };
@@ -587,7 +591,7 @@ jQuery('document').ready(() => {
                 || this[PR_SEED] !== seed
                 || this[PR_TAB_SIZE][0] !== size[0]
                 || this[PR_TAB_SIZE][1] !== size[1]
-                || this[PR_TOK_DONE] !== tokd) {
+                || this[PR_TOK_BLOCK] !== tokd) {
                 return false;
             }
             for(let [ttyp, spos, dir, ...rm] of recs) {
@@ -609,7 +613,7 @@ jQuery('document').ready(() => {
     }
     
     const scene = ELEM('ars_scene', 'ar_scene');
-    /*const*/ game = new c_arrdun([3, 3], 16, 'hello world');
+    /*const*/ game = new c_arrdun([3, 3], 5, 'hello world');
     /*const*/ board = new c_board(game, 3);
     scene.append(board.elem);
     board.start();
