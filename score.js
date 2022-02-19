@@ -4,13 +4,24 @@ const ARSCORE = (() => {
         
         PL_ORDERBUF, PL_SEQBUF,
         
-        MTD_SORT_BUF, MTD_MAKE_MAT,
+        MTD_SORT_BUF, MTD_MAKE_MAT, MTD_MAKE_STR,
         
     ] = (function*() {
         while(true) {
             yield Symbol();
         }
     })();
+    
+    const syms = {
+        b: '\u2588',
+        w: ' ',//'\u2595',
+        b0: '\u2581',
+        b1: '\u2584',
+        b2: '\u2588',
+        w0: '\u2588',
+        w1: '\u2580',
+        w2: '\u2594',
+    };
     
     class c_score {
         
@@ -65,9 +76,22 @@ const ARSCORE = (() => {
             return mat;
         }
         
+        [MTD_MAKE_STR](mat) {
+            let smat = [];
+            for(let row of mat) {
+                let line = '';
+                for(let [val, black] of row) {
+                    line += syms[(black ? 'b' : 'w') + (val ? '1' : '')];
+                }
+                smat.push(line);
+            }
+            return smat.join('\n');
+        }
+        
         score() {
             this[MTD_SORT_BUF]();
-            return this[MTD_MAKE_MAT]();
+            let mat = this[MTD_MAKE_MAT]();
+            return this[MTD_MAKE_STR](mat);
         }
         
     }
@@ -80,8 +104,7 @@ const ARSCORE = (() => {
             }
             sc.put(false, null);
         }
-        let mat = sc.score();
-        return mat.map(r=>r.map(v=>(v[1]?1:0)+(v[0]?20:10)));
+        return sc.score();
     }
     
     return c_score;
