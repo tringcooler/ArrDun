@@ -102,7 +102,7 @@ const ARSCORE = (() => {
         constructor(std_wid) {
             this.syms = {
                 miss: '\u26aa',
-                arrs: ['\u27a1', '\u2935', '\u2934', '\u21a9'],
+                arrs: ['\u27a1', '\u2935', '\u21a9', '\u2934'],
                 star: '\u2747',
             };
             this[PR_STD_WID] = std_wid;
@@ -169,9 +169,13 @@ const ARSCORE = (() => {
                 let c;
                 if(val === null) {
                     c = this.syms.miss;
-                } else {
+                } else if(last_val === null){
                     c = this.syms.arrs[0];
+                } else {
+                    let dv = val - last_val;
+                    c = this.syms.arrs[((dv % 4) + 4) % 4];
                 }
+                last_val = val;
                 rs += c;
             }
             return rs;
