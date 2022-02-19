@@ -70,7 +70,7 @@ jQuery('document').ready(() => {
         [MTD_NEW_PAD]() {
             let elem = ELEM('ars_pad', 'ar_pad');
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
-            let score = ELEM('ars_pad_info', 'ar_score');
+            let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM(null, 'ar_score'));
             let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
             scb.append(ELEM('ars_pad_cell').append(score), ELEM('ars_pad_cell').append(shr));
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');

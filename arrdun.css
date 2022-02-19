@@ -11,9 +11,17 @@
     width: 135px;
 }
 
+#ar_score_frame {
+    position: relative;
+    bottom: 0px;
+    overflow: hidden;
+    height: 100px;
+}
+
 #ar_score {
     white-space: pre-line;
-    height: 100;
+    position: absolute;
+    bottom: 0px;
 }
 
 #ar_tokleft {
