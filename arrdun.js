@@ -54,6 +54,7 @@ jQuery('document').ready(() => {
         
         [MTD_INIT_SYMS]() {
             this.sym_undo = '\u238c';
+            this.sym_share = '\u21ef';
             this.sym_inf = '\u221e';
         }
         
@@ -68,14 +69,18 @@ jQuery('document').ready(() => {
         
         [MTD_NEW_PAD]() {
             let elem = ELEM('ars_pad', 'ar_pad');
+            let scb = ELEM('ars_pad_console', 'ar_pad_score');
+            let score = ELEM('ars_pad_info', 'ar_score');
+            let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
+            scb.append(ELEM('ars_pad_cell').append(score), ELEM('ars_pad_cell').append(shr));
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
-            let toknum = ELEM('ars_tokleft', 'ar_tokleft');
+            let toknum = ELEM('ars_pad_info', 'ar_tokleft');
             let undo = ELEM('ars_pad_button', 'ar_undo').text(this.sym_undo);
             undo.on('tap', e => this[MTD_ON_UNDO]());
-            cnsl.append(toknum, undo);
+            cnsl.append(ELEM('ars_pad_cell').append(toknum), ELEM('ars_pad_cell').append(undo));
             let [tokseq, stab] = this[MTD_NEW_TAB]('tokseq', [this[PR_SEQ_LEN], 1]);
             this[PR_AB_SEQ] = stab;
-            elem.append(cnsl, tokseq);
+            elem.append(scb, cnsl, tokseq);
             this[PR_AB_PAD] = elem;
             return elem;
         }
@@ -334,6 +339,7 @@ jQuery('document').ready(() => {
         [MTD_UPDATE_SCORE]() {
             let tl = Math.max(0, this[PR_GAME].tokleft + this[PR_SEQ_LEN] + 1);
             this[PR_AB_PAD].find('#ar_tokleft').text(tl > 0 ? tl : this.sym_inf);
+            this[PR_AB_PAD].find('#ar_score').text(this[PR_GAME].score);
         }
         
         async [MTD_ON_TAP](pos) {

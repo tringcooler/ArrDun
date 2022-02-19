@@ -3,14 +3,24 @@
     display: table;
 }
 
-.ars_tokleft {
+.ars_pad_cell {
     display: table-cell;
+}
+
+.ars_pad_info {
     width: 135px;
+}
+
+#ar_score {
+    white-space: pre-line;
+    height: 100;
+}
+
+#ar_tokleft {
     height: 30px;
 }
 
 .ars_pad_button {
-    display: table-cell;
     border: 1px solid;
     width: 30px;
     height: 30px;

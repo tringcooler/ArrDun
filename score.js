@@ -180,7 +180,7 @@ const ARSCORE = (() => {
         score() {
             let line = this[MTD_ADD_SEQ](true);
             let mat = this[PL_MATBUF];
-            console.log(mat, line, this[PL_LINEBUF], this[PL_SEQBUF]);
+            //console.log(mat, line, this[PL_LINEBUF], this[PL_SEQBUF]);
             if(line.length > 0) {
                 mat = [...mat, this[MTD_LINESTR](line)];
             }
