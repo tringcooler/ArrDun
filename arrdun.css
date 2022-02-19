@@ -3,7 +3,7 @@
     display: table;
 }
 
-.ars_lefttok {
+.ars_tokleft {
     display: table-cell;
     width: 135px;
     height: 30px;
@@ -21,4 +21,24 @@
     position: relative;
     width: 50px;
     height: 50px;
+}
+
+.ars_utyp_char{
+    background-color: orange;
+}
+
+.ars_utyp_done{
+    background-color: blue;
+}
+
+.ars_utyp_forward {
+    background-color: green;
+}
+
+.ars_utyp_backward {
+    background-color: red;
+}
+
+.ars_utyp_sideward {
+    background-color: yellow;
 }

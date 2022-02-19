@@ -14,7 +14,7 @@ jQuery('document').ready(() => {
         
         PR_ELEM, PR_GAME, PR_SEED, PR_PRNG,
         PR_TAB_SIZE, PR_SEQ_LEN,
-        PR_AB_TAB, PR_AB_SEQ, PR_AB_ANIMDUR,
+        PR_AB_TAB, PR_AB_SEQ, PR_AB_PAD, PR_AB_ANIMDUR,
         PR_TOK_DONE, PR_TOK_CNT,
         PL_TOK_CACHE, PL_REC,
         FLG_AB_BUSSY,
@@ -23,8 +23,9 @@ jQuery('document').ready(() => {
         MTD_NEW_UNIT, MTD_NEW_TAB,
         MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
         MTD_GETSEQ, MTD_SHIFTSEQ, MTD_FIND_TAB,
+        MTD_UPDATE_MTAB, MTD_UPDATE_SCORE,
         MTD_ON_TAP, MTD_ON_UNDO,
-        MTD_INIT_SYMS, MTD_TOKDIR, MTD_TOKTYPE,
+        MTD_INIT_SYMS, MTD_TOKDIR,
         
     ] = sym_gen();
     
@@ -55,6 +56,7 @@ jQuery('document').ready(() => {
         
         [MTD_INIT_SYMS]() {
             this.sym_undo = '\u238c';
+            this.sym_inf = '\u221e';
         }
         
         [MTD_NEW_ELEM]() {
@@ -69,19 +71,24 @@ jQuery('document').ready(() => {
         [MTD_NEW_PAD]() {
             let elem = ELEM('ars_pad', 'ar_pad');
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
-            let toknum = ELEM('ars_lefttok', 'ar_lefttok');
+            let toknum = ELEM('ars_tokleft', 'ar_tokleft');
             let undo = ELEM('ars_pad_button', 'ar_undo').text(this.sym_undo);
             undo.on('tap', e => this[MTD_ON_UNDO]());
             cnsl.append(toknum, undo);
             let [tokseq, stab] = this[MTD_NEW_TAB]('tokseq', [this[PR_SEQ_LEN], 1]);
             this[PR_AB_SEQ] = stab;
             elem.append(cnsl, tokseq);
+            this[PR_AB_PAD] = elem;
             return elem;
         }
         
-        [MTD_NEW_UNIT](val) {
+        [MTD_NEW_UNIT](tok) {
             let uelem = ELEM('ars_unit');
-            uelem.text(val);
+            uelem.text(tok);
+            let ttyp = this[PR_GAME].toktype(tok);
+            if(['char', 'done'].includes(ttyp)) {
+                uelem.addClass('ars_utyp_' + ttyp);
+            }
             return uelem;
         }
         
@@ -115,6 +122,11 @@ jQuery('document').ready(() => {
                 this[PR_ELEM] = this[MTD_NEW_ELEM]();
             }
             return this[PR_ELEM];
+        }
+        
+        async start() {
+            this[MTD_UPDATE_SCORE]();
+            await this[MTD_UPDATE_MTAB]();
         }
         
         [MTD_GETUNIT](celem) {
@@ -213,11 +225,7 @@ jQuery('document').ready(() => {
         }
         
         async shift(spos, dir, extra = null, rvs = false, dur = null) {
-            if(this[FLG_AB_BUSSY]) {
-                throw Error('bussy');
-            }
             dur = dur ?? this[PR_AB_ANIMDUR];
-            this[FLG_AB_BUSSY] = true;
             let pushed = ((extra ?? null) !== null);
             if(!pushed) {
                 dir = dir.map(v => v ? v * Infinity : 0);
@@ -263,7 +271,6 @@ jQuery('document').ready(() => {
                     await uel.show('fade', dur).promise();
                 },
             );
-            this[FLG_AB_BUSSY] = false;
             return this[MTD_GETTOK](first);
         }
         
@@ -283,21 +290,67 @@ jQuery('document').ready(() => {
             return [-1, -1];
         }
         
+        async [MTD_UPDATE_MTAB](dur = null) {
+            dur = dur ?? this[PR_AB_ANIMDUR];
+            let tab = this[PR_AB_TAB];
+            let prms = [];
+            let spos = this[MTD_FIND_TAB](tab, this[PR_GAME].sym_char);
+            let rlen = tab.length;
+            for(let y = 0; y < rlen; y++) {
+                let row = tab[y];
+                let clen = row.length;
+                for(let x = 0; x < clen; x++) {
+                    let celem = row[x];
+                    let uelem = this[MTD_GETUNIT](celem);
+                    let ctok = this[MTD_GETTOK](uelem);
+                    let dir = [x - spos[0], y - spos[1]];
+                    let ttyp = this[PR_GAME].toktype(ctok, dir);
+                    let utyps = ['forward', 'backward', 'sideward'];
+                    let uti = utyps.indexOf(ttyp);
+                    if(uti >= 0) {
+                        prms.push(
+                            uelem.switchClass(
+                                utyps.map(v=>v===ttyp?'':'ars_utyp_'+v).join(' '),
+                                'ars_utyp_' + ttyp, dur).promise()
+                        );
+                    } else {
+                        prms.push(
+                            uelem.removeClass(
+                                utyps.map(v=>'ars_utyp_'+v).join(' '), dur).promise()
+                        );
+                    }
+                }
+            }
+            await Promise.all(prms);
+        }
+        
+        [MTD_UPDATE_SCORE]() {
+            let tl = Math.max(0, this[PR_GAME].tokleft + this[PR_SEQ_LEN] + 1);
+            this[PR_AB_PAD].find('#ar_tokleft').text(tl > 0 ? tl : this.sym_inf);
+        }
+        
         async [MTD_ON_TAP](pos) {
             if(this[FLG_AB_BUSSY]) {
                 return;
             }
+            this[FLG_AB_BUSSY] = true;
             let spos = this[MTD_FIND_TAB](this[PR_AB_TAB], this[PR_GAME].sym_char);
             if(!(await this[PR_GAME].move(this, spos, pos))) {
+                this[FLG_AB_BUSSY] = false;
                 return;
             }
+            this[MTD_UPDATE_SCORE]();
+            await this[MTD_UPDATE_MTAB]();
+            this[FLG_AB_BUSSY] = false;
         }
         
         async [MTD_ON_UNDO]() {
             if(this[FLG_AB_BUSSY]) {
                 return;
             }
+            this[FLG_AB_BUSSY] = true;
             await this[PR_GAME].undo(this);
+            this[FLG_AB_BUSSY] = false;
         }
         
         peek(pos) {
@@ -331,6 +384,10 @@ jQuery('document').ready(() => {
         
         get size() {
             return this[PR_TAB_SIZE];
+        }
+        
+        get tokleft() {
+            return this[PR_TOK_DONE] - this[PR_TOK_CNT];
         }
         
         [MTD_INIT_SYMS]() {
@@ -392,11 +449,13 @@ jQuery('document').ready(() => {
             }
         }
         
-        [MTD_TOKTYPE](tok, dir) {
-            let [dx, dy] = dir;
-            if(tok === this.sym_done) {
+        toktype(tok, dir) {
+            if(tok === this.sym_char) {
+                return 'char';
+            } else if(tok === this.sym_done) {
                 return 'done';
-            } else {
+            } else if(dir) {
+                let [dx, dy] = dir;
                 let tokdir = this[MTD_TOKDIR](tok);
                 if(!tokdir) {
                     return 'others';
@@ -412,6 +471,8 @@ jQuery('document').ready(() => {
                 } else {
                     return 'sideward';
                 }
+            } else {
+                return 'unknown';
             }
         }
         
@@ -421,7 +482,7 @@ jQuery('document').ready(() => {
                 return false;
             }
             let dir = [dpos[0] - spos[0], dpos[1] - spos[1]];
-            let ttyp = this[MTD_TOKTYPE](tok, dir);
+            let ttyp = this.toktype(tok, dir);
             if(ttyp === 'forward') {
                 let ntok = this.take_tok();
                 let otok = await bd.shift(spos, dir, ntok);
@@ -492,6 +553,7 @@ jQuery('document').ready(() => {
     /*const*/ game = new c_arrdun([3, 3], 16, 'hello world');
     /*const*/ board = new c_board(game, 3);
     scene.append(board.elem);
+    board.start();
     $('#main').append(scene);
     
 });
