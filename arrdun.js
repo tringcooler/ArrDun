@@ -17,7 +17,8 @@ jQuery('document').ready(() => {
         MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
         MTD_GETSEQ, MTD_SHIFTSEQ, MTD_FIND_TAB,
         MTD_UPDATE_MTAB, MTD_UPDATE_SCORE,
-        MTD_ON_TAP, MTD_ON_UNDO, MTD_ON_SHARE,
+        MTD_ON_TAP, MTD_ON_UNDO, MTD_ON_POPUP,
+        MTD_SAVE, MTD_LOAD_DATA, MTD_LOAD,
         MTD_INIT_SYMS, MTD_TOKDIR,
         MTD_REC_PUSH, MTD_REC_POP,
         MTD_REC_TO_SCVAL,
@@ -84,7 +85,7 @@ jQuery('document').ready(() => {
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
             let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM('ars_score_text', 'ar_score'));
             let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
-            shr.on('tap', e => this[MTD_ON_SHARE]());
+            shr.on('tap', e => this[MTD_ON_POPUP]());
             scb.append(ELEM('ars_pad_cell').append(score), ELEM('ars_pad_cell').append(shr));
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
             let toknum = ELEM('ars_pad_info', 'ar_tokleft');
@@ -112,12 +113,17 @@ jQuery('document').ready(() => {
                 ),
             );
             butt_cp.on('tap', e => {
-                CLP_COPY(txt_sc.text(), '#popup');
+                CLP_COPY(txt_sc.text(), '#ar_popup');
             });
-            butt_ld.on('tap', e => {
-                console.log('load');
+            butt_ld.on('tap', async e => {
+                elem.popup('close');
+                await this[MTD_LOAD]();
             });
-            $('#popup').append(elem);
+            elem.append(elem);
+            elem.popup({
+                history: false,
+            });
+            this[PR_AB_POPUP] = elem;
             return elem;
         }
         
@@ -168,6 +174,9 @@ jQuery('document').ready(() => {
             this[MTD_UPDATE_SCORE]();
             await this[MTD_UPDATE_MTAB]();
             this[FLG_AB_BUSSY] = false;
+            if(this[MTD_LOAD_DATA]()) {
+                this[MTD_ON_POPUP]();
+            }
         }
         
         [MTD_GETUNIT](celem) {
@@ -390,6 +399,7 @@ jQuery('document').ready(() => {
             }
             this[MTD_UPDATE_SCORE]();
             await this[MTD_UPDATE_MTAB]();
+            this[MTD_SAVE]();
             this[FLG_AB_BUSSY] = false;
         }
         
@@ -404,16 +414,18 @@ jQuery('document').ready(() => {
             }
             this[MTD_UPDATE_SCORE]();
             await this[MTD_UPDATE_MTAB]();
+            this[MTD_SAVE]();
             this[FLG_AB_BUSSY] = false;
         }
         
-        [MTD_ON_SHARE](lvlup = false) {
+        [MTD_ON_POPUP](...args) {
             $('#ar_popup_score').text(this[PR_GAME].score);
-            if(this[PR_GAME].isinit) {
+            if(this[PR_GAME].isinit && this[MTD_LOAD_DATA]()) {
                 $('#ar_popup_title').text('Load');
                 $('#ar_popup_bc_cp').hide();
                 $('#ar_popup_bc_ld').show();
             } else {
+                let lvlup = args[0] ?? false;
                 if(lvlup) {
                     $('#ar_popup_title').text('Level Up');
                 } else {
@@ -422,7 +434,7 @@ jQuery('document').ready(() => {
                 $('#ar_popup_bc_cp').show();
                 $('#ar_popup_bc_ld').hide();
             }
-            $('#popup').popup('open');
+            this[PR_AB_POPUP].popup('open');
         }
         
         peek(pos) {
@@ -443,7 +455,34 @@ jQuery('document').ready(() => {
         }
         
         levelup() {
-            this[MTD_ON_SHARE](true);
+            this[MTD_ON_POPUP](true);
+        }
+        
+        [MTD_SAVE]() {
+            localStorage.arsave = JSON.stringify(this[PR_GAME].save());
+        }
+        
+        [MTD_LOAD_DATA]() {
+            let data;
+            try {
+                data = JSON.parse(localStorage.arsave);
+            } catch(e) {
+                return null;
+            }
+            if(this[PR_GAME].canload(data)) {
+                return data;
+            } else {
+                return null;
+            }
+        }
+        
+        async [MTD_LOAD]() {
+            let data = this[MTD_LOAD_DATA]();
+            if(data) {
+                await this[PR_GAME].load(this, data);
+            }
+            this[MTD_UPDATE_SCORE]();
+            await this[MTD_UPDATE_MTAB]();
         }
         
     }
@@ -670,15 +709,21 @@ jQuery('document').ready(() => {
             };
         }
         
-        async load(bd, data) {
+        canload(data) {
             let {size, tokd, seed, recs} = data;
-            if(!this.isinit
-                || this[PR_SEED] !== seed
-                || this[PR_TAB_SIZE][0] !== size[0]
-                || this[PR_TAB_SIZE][1] !== size[1]
-                || this[PR_TOK_BLOCK] !== tokd) {
+            return this.isinit
+                && this[PR_SEED] === seed
+                && this[PR_TAB_SIZE][0] === size[0]
+                && this[PR_TAB_SIZE][1] === size[1]
+                && this[PR_TOK_BLOCK] === tokd
+                && recs.length > 0;
+        }
+        
+        async load(bd, data) {
+            if(!this.canload(data)) {
                 return false;
             }
+            let {recs} = data;
             for(let [ttyp, spos, dir, ...rm] of recs) {
                 if(ttyp === 'forward') {
                     let [ntok, otok, tptok] = rm;
@@ -697,7 +742,6 @@ jQuery('document').ready(() => {
         
     }
     
-    location.hash = '';
     const scene = ELEM('ars_scene', 'ar_scene');
     /*const*/ game = new c_arrdun([3, 3], 5, 'hello world');
     /*const*/ board = new c_board(game, 3);
