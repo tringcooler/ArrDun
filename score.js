@@ -168,9 +168,9 @@ const ARSCORE = (() => {
             for(let val of line) {
                 let c;
                 if(val === null) {
-                    c = this.syms.miss;
+                    c = '';
                 } else if(last_val === null){
-                    c = this.syms.arrs[0];
+                    c = this.syms.miss;
                 } else {
                     let dv = val - last_val;
                     c = this.syms.arrs[((dv % 4) + 4) % 4];
@@ -191,11 +191,7 @@ const ARSCORE = (() => {
             if(line.length > 0) {
                 mat = [...mat, this[MTD_LINESTR](line)];
             }
-            let s = mat.join('\n');
-            if(!s) {
-                s = this.syms.miss;
-            }
-            return s;
+            return mat.join('\n');
         }
         
     }

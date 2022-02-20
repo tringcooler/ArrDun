@@ -370,8 +370,7 @@ jQuery('document').ready(() => {
         [MTD_UPDATE_SCORE]() {
             let tl = Math.max(0, this[PR_GAME].tokleft(this[PR_SEQ_LEN]));
             this[PR_AB_PAD].find('#ar_tokleft').text(tl > 0 ? tl : this.sym_inf);
-            let sc = this[PR_GAME].score;
-            this[PR_AB_PAD].find('#ar_score').text(sc ? sc : 'a');
+            this[PR_AB_PAD].find('#ar_score').text(this[PR_GAME].score);
         }
         
         async [MTD_ON_TAP](pos) {
