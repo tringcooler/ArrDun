@@ -673,6 +673,7 @@ jQuery('document').ready(() => {
         
     }
     
+    location.hash = '';
     const scene = ELEM('ars_scene', 'ar_scene');
     /*const*/ game = new c_arrdun([3, 3], 5, 'hello world');
     /*const*/ board = new c_board(game, 3);
