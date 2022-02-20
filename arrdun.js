@@ -74,14 +74,15 @@ jQuery('document').ready(() => {
             let elem = ELEM('ars_board', 'ar_board');
             let pdelem = this[MTD_NEW_PAD]();
             let [mtelem, mtab] = this[MTD_NEW_TAB]('main', this[PR_TAB_SIZE], true);
+            mtelem.addClass('ars_sect');
             this[PR_AB_TAB] = mtab;
-            elem.append(pdelem, mtelem);
+            elem.append(pdelem, ELEM('ars_sqpd_mtab').append(mtelem));
             this[MTD_NEW_POPUP]();
             return elem;
         }
         
         [MTD_NEW_PAD]() {
-            let elem = ELEM('ars_pad', 'ar_pad');
+            let elem = ELEM('ars_pad ars_sect', 'ar_pad');
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
             let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM('ars_score_text', 'ar_score'));
             let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
@@ -94,7 +95,7 @@ jQuery('document').ready(() => {
             cnsl.append(ELEM('ars_pad_cell').append(toknum), ELEM('ars_pad_cell').append(undo));
             let [tokseq, stab] = this[MTD_NEW_TAB]('tokseq', [this[PR_SEQ_LEN], 1]);
             this[PR_AB_SEQ] = stab;
-            elem.append(scb, cnsl, tokseq);
+            elem.append(scb, cnsl, ELEM('ars_sqpd_tseq').append(tokseq));
             this[PR_AB_PAD] = elem;
             return elem;
         }
@@ -112,18 +113,20 @@ jQuery('document').ready(() => {
                     ELEM('ars_popup_button_cell', 'ar_popup_bc_ld').append(butt_ld),
                 ),
             );
+            let ppp = $('#arp_popup');
             butt_cp.on('tap', e => {
                 CLP_COPY(txt_sc.text(), '#ar_popup');
             });
             butt_ld.on('tap', async e => {
-                elem.popup('close');
+                ppp.popup('close');
                 await this[MTD_LOAD]();
             });
-            elem.append(elem);
-            elem.popup({
+            ppp.append(elem);
+            ppp.popup('option', {
                 history: false,
+                shadow: false,
             });
-            this[PR_AB_POPUP] = elem;
+            this[PR_AB_POPUP] = ppp;
             return elem;
         }
         
@@ -148,11 +151,12 @@ jQuery('document').ready(() => {
                 let row = [];
                 tab.push(row);
                 for(let x = 0; x < sw; x++) {
-                    let celem = ELEM('ars_cell', null, 'td');;
+                    let tcelem = ELEM(null, null, 'td');
+                    let celem = ELEM('ars_cell ars_sqpd_unit', null);
                     if(tap) {
                         celem.on('tap', e => this[MTD_ON_TAP]([x, y]));
                     }
-                    relem.append(celem);
+                    relem.append(tcelem.append(celem));
                     let v = this[PR_GAME].init_tok(name, [x, y]);
                     let uelem = this[MTD_NEW_UNIT](v);
                     celem.append(uelem);
