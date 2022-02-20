@@ -727,6 +727,9 @@ jQuery('document').ready(() => {
             for(let [ttyp, spos, dir, ...rm] of recs) {
                 if(ttyp === 'forward') {
                     let [ntok, otok, tptok] = rm;
+                    if(ntok !== this.take_tok()) {
+                        throw Error('unmatch record');
+                    }
                     let potok = await bd.shift(spos, dir, ntok);
                     if(otok !== potok) {
                         throw Error('unmatch record');
