@@ -419,11 +419,12 @@ jQuery('document').ready(() => {
         }
         
         [MTD_ON_POPUP](...args) {
-            $('#ar_popup_score').text(this[PR_GAME].score);
-            if(this[PR_GAME].isinit && this[MTD_LOAD_DATA]()) {
+            let lddat;
+            if(this[PR_GAME].isinit && (lddat = this[MTD_LOAD_DATA]())) {
                 $('#ar_popup_title').text('Load');
                 $('#ar_popup_bc_cp').hide();
                 $('#ar_popup_bc_ld').show();
+                $('#ar_popup_score').text(lddat.scor);
             } else {
                 let lvlup = args[0] ?? false;
                 if(lvlup) {
@@ -433,6 +434,7 @@ jQuery('document').ready(() => {
                 }
                 $('#ar_popup_bc_cp').show();
                 $('#ar_popup_bc_ld').hide();
+                $('#ar_popup_score').text(this[PR_GAME].score);
             }
             this[PR_AB_POPUP].popup('open');
         }
@@ -645,7 +647,7 @@ jQuery('document').ready(() => {
         }
         
         get score() {
-            return this[PR_SCORE].score();
+            return this[PR_SCORE].score;
         }
         
         async move(bd, spos, dpos) {
@@ -706,6 +708,7 @@ jQuery('document').ready(() => {
                 tokd: this[PR_TOK_BLOCK],
                 seed: this[PR_SEED],
                 recs: this[PL_REC].slice(),
+                scor: this.score,
             };
         }
         

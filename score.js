@@ -4,9 +4,10 @@ const ARSCORE = (() => {
         
         PL_ORDERBUF,
         PR_STD_WID, PL_SEQBUF, PL_LINEBUF, PL_MATBUF,
+        PR_LZ_SC, FLG_LZ_DIRTY,
         
         MTD_SORT_BUF, MTD_MAKE_MAT, MTD_MAKE_STR,
-        MTD_ADD_SEQ, MTD_ADD_LINE, MTD_LINESTR,
+        MTD_ADD_SEQ, MTD_ADD_LINE, MTD_LINESTR, MTD_SCORE,
         
     ] = (function*() {
         while(true) {
@@ -101,7 +102,7 @@ const ARSCORE = (() => {
         
         constructor(std_wid) {
             this.syms = {
-                miss: '\u26aa',
+                miss: ['\u25b6', '\ud83d\udd3d', '\u25c0', '\ud83d\udd3c'],
                 arrs: ['\u27a1', '\u2935', '\u21a9', '\u2934'],
                 star: '\u2747',
             };
@@ -113,9 +114,12 @@ const ARSCORE = (() => {
             this[PL_SEQBUF] = [];
             this[PL_LINEBUF] = [];
             this[PL_MATBUF] = [];
+            this[PR_LZ_SC] = '';
+            this[FLG_LZ_DIRTY] = true;
         }
         
         put(val = null) {
+            this[FLG_LZ_DIRTY] = true;
             let seq = this[PL_SEQBUF];
             if(val !== null || seq.length > 0) {
                 seq.push(val);
@@ -170,7 +174,7 @@ const ARSCORE = (() => {
                 if(val === null) {
                     c = '';
                 } else if(last_val === null){
-                    c = this.syms.miss;
+                    c = this.syms.miss[val % 4];
                 } else {
                     let dv = val - last_val;
                     c = this.syms.arrs[((dv % 4) + 4) % 4];
@@ -184,7 +188,7 @@ const ARSCORE = (() => {
             return rs;
         }
         
-        score() {
+        [MTD_SCORE]() {
             let line = this[MTD_ADD_SEQ](true);
             let mat = this[PL_MATBUF];
             //console.log(mat, line, this[PL_LINEBUF], this[PL_SEQBUF]);
@@ -192,6 +196,14 @@ const ARSCORE = (() => {
                 mat = [...mat, this[MTD_LINESTR](line)];
             }
             return mat.join('\n');
+        }
+        
+        get score() {
+            if(this[FLG_LZ_DIRTY]) {
+                this[PR_LZ_SC] = this[MTD_SCORE]();
+                this[FLG_LZ_DIRTY] = false;
+            }
+            return this[PR_LZ_SC];
         }
         
     }
