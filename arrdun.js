@@ -614,6 +614,14 @@ jQuery('document').ready(() => {
             } else if(ttyp === 'sideward') {
                 await bd.shift(spos, dir);
                 this[MTD_REC_PUSH](ttyp, spos, dir);
+            } else if(ttyp === 'block') {
+                let nxtpos = [dpos[0] + dir[0], dpos[1] + dir[1]];
+                let nxttok = bd.peek(nxtpos);
+                if(!nxttok || this.toktype(nxttok) === 'block') {
+                    return false;
+                }
+                await bd.shift(spos, dir);
+                this[MTD_REC_PUSH]('sideward', spos, dir);
             } else {
                 return false;
             }
