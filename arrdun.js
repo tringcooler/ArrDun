@@ -114,8 +114,11 @@ jQuery('document').ready(() => {
                 ),
             );
             let ppp = $('#arp_popup');
-            butt_cp.on('tap', e => {
+            butt_cp.on('tap', async e => {
                 CLP_COPY(this[MTD_SHARE_TXT](txt_sc.text()), '#ar_popup');
+                butt_cp.addClass('ars_pad_button_check');
+                await ASLEEP(500);
+                butt_cp.removeClass('ars_pad_button_check');
             });
             butt_ld.on('tap', async e => {
                 ppp.popup('close');

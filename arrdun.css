@@ -208,6 +208,11 @@
     margin-top: 10px;
 }
 
+.ars_pad_button_check {
+    background-color: var(--u-fw-color);
+    color: var(--u-tx-color);
+}
+
 /*==========*/
 
 .arps_global {
