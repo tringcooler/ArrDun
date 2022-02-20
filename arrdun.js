@@ -6,17 +6,18 @@ jQuery('document').ready(() => {
         
         PR_ELEM, PR_GAME, PR_SEED, PR_PRNG, PR_SCORE,
         PR_TAB_SIZE, PR_SEQ_LEN,
-        PR_AB_TAB, PR_AB_SEQ, PR_AB_PAD, PR_AB_ANIMDUR,
+        PR_AB_TAB, PR_AB_SEQ, PR_AB_PAD, PR_AB_POPUP,
+        PR_AB_ANIMDUR,
         PR_TOK_BLOCK, PR_TOK_CNT,
         PL_TOK_CACHE, PL_REC,
         FLG_AB_BUSSY,
         
-        MTD_NEW_ELEM, MTD_NEW_PAD,
+        MTD_NEW_ELEM, MTD_NEW_PAD, MTD_NEW_POPUP,
         MTD_NEW_UNIT, MTD_NEW_TAB,
         MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
         MTD_GETSEQ, MTD_SHIFTSEQ, MTD_FIND_TAB,
         MTD_UPDATE_MTAB, MTD_UPDATE_SCORE,
-        MTD_ON_TAP, MTD_ON_UNDO,
+        MTD_ON_TAP, MTD_ON_UNDO, MTD_ON_SHARE,
         MTD_INIT_SYMS, MTD_TOKDIR,
         MTD_REC_PUSH, MTD_REC_POP,
         MTD_REC_TO_SCVAL,
@@ -63,7 +64,8 @@ jQuery('document').ready(() => {
             let pdelem = this[MTD_NEW_PAD]();
             let [mtelem, mtab] = this[MTD_NEW_TAB]('main', this[PR_TAB_SIZE], true);
             this[PR_AB_TAB] = mtab;
-            elem.append(pdelem).append(mtelem);
+            elem.append(pdelem, mtelem);
+            this[MTD_NEW_POPUP]();
             return elem;
         }
         
@@ -72,6 +74,7 @@ jQuery('document').ready(() => {
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
             let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM(null, 'ar_score'));
             let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
+            shr.on('tap', e => this[MTD_ON_SHARE]());
             scb.append(ELEM('ars_pad_cell').append(score), ELEM('ars_pad_cell').append(shr));
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
             let toknum = ELEM('ars_pad_info', 'ar_tokleft');
@@ -82,6 +85,13 @@ jQuery('document').ready(() => {
             this[PR_AB_SEQ] = stab;
             elem.append(scb, cnsl, tokseq);
             this[PR_AB_PAD] = elem;
+            return elem;
+        }
+        
+        [MTD_NEW_POPUP]() {
+            let elem = ELEM('ars_popup', 'ar_popup');
+            elem.text('test dialog');
+            $('#popup_win').append(elem);
             return elem;
         }
         
@@ -372,6 +382,13 @@ jQuery('document').ready(() => {
             this[FLG_AB_BUSSY] = false;
         }
         
+        [MTD_ON_SHARE](lvlup = false) {
+            if(lvlup) {
+                console.log('level up');
+            }
+            $('#popup').popup('open');
+        }
+        
         peek(pos) {
             let [x, y] = pos;
             let celem = this[PR_AB_TAB][y]?.[x];
@@ -390,7 +407,7 @@ jQuery('document').ready(() => {
         }
         
         levelup() {
-            console.log('level up');
+            this[MTD_ON_SHARE](true);
         }
         
     }
