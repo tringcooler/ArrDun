@@ -68,8 +68,8 @@
     width: 300px;
 }
 
-#ar_popup {
-    height: 500px;
+.ars_popup_frame {
+    margin-bottom: 30px;
 }
 
 .ars_popup_button_frame {

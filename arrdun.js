@@ -102,15 +102,20 @@ jQuery('document').ready(() => {
             let elem = ELEM('ars_popup', 'ar_popup');
             let txt_sc = ELEM('ars_score_text', 'ar_popup_score');
             let butt_cp = ELEM('ars_popup_button', 'ar_popup_copy').text('copy');
+            let butt_ld = ELEM('ars_popup_button', 'ar_popup_copy').text('load');
             elem.append(
                 ELEM('ars_popup_title', 'ar_popup_title'),
                 ELEM('ars_popup_frame', 'ar_popup_main').append(txt_sc),
                 ELEM('ars_popup_button_frame').append(
-                    ELEM('ars_popup_button_cell').append(butt_cp),
+                    ELEM('ars_popup_button_cell', 'ar_popup_bc_cp').append(butt_cp),
+                    ELEM('ars_popup_button_cell', 'ar_popup_bc_ld').append(butt_ld),
                 ),
             );
             butt_cp.on('tap', e => {
                 CLP_COPY(txt_sc.text(), '#popup');
+            });
+            butt_ld.on('tap', e => {
+                console.log('load');
             });
             $('#popup').append(elem);
             return elem;
@@ -403,12 +408,20 @@ jQuery('document').ready(() => {
         }
         
         [MTD_ON_SHARE](lvlup = false) {
-            if(lvlup) {
-                $('#ar_popup_title').text('level up');
-            } else {
-                $('#ar_popup_title').text('share');
-            }
             $('#ar_popup_score').text(this[PR_GAME].score);
+            if(this[PR_GAME].isinit) {
+                $('#ar_popup_title').text('Load');
+                $('#ar_popup_bc_cp').hide();
+                $('#ar_popup_bc_ld').show();
+            } else {
+                if(lvlup) {
+                    $('#ar_popup_title').text('Level Up');
+                } else {
+                    $('#ar_popup_title').text('Share');
+                }
+                $('#ar_popup_bc_cp').show();
+                $('#ar_popup_bc_ld').hide();
+            }
             $('#popup').popup('open');
         }
         
@@ -644,6 +657,10 @@ jQuery('document').ready(() => {
             return true;
         }
         
+        get isinit() {
+            return this[PL_REC].length === 0;
+        }
+        
         save() {
             return {
                 size: this[PR_TAB_SIZE],
@@ -655,7 +672,7 @@ jQuery('document').ready(() => {
         
         async load(bd, data) {
             let {size, tokd, seed, recs} = data;
-            if(this[PL_REC].length > 0
+            if(!this.isinit
                 || this[PR_SEED] !== seed
                 || this[PR_TAB_SIZE][0] !== size[0]
                 || this[PR_TAB_SIZE][1] !== size[1]
