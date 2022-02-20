@@ -82,17 +82,17 @@ jQuery('document').ready(() => {
         }
         
         [MTD_NEW_PAD]() {
-            let elem = ELEM('ars_pad ars_sect', 'ar_pad');
+            let elem = ELEM('ars_pad ars_sect ars_rdbox', 'ar_pad');
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
             let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM('ars_score_text', 'ar_score'));
-            let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
+            let shr = ELEM('ars_pad_button ars_rdbox', 'ar_share').text(this.sym_share);
             shr.on('tap', e => this[MTD_ON_POPUP]());
-            scb.append(ELEM('ars_pad_cell').append(score), ELEM('ars_pad_cell').append(shr));
+            scb.append(ELEM('ars_pad_cell ars_pdcl_info').append(score), ELEM('ars_pad_cell').append(shr));
             let cnsl = ELEM('ars_pad_console', 'ar_pad_console');
             let toknum = ELEM('ars_pad_info', 'ar_tokleft');
-            let undo = ELEM('ars_pad_button', 'ar_undo').text(this.sym_undo);
+            let undo = ELEM('ars_pad_button ars_rdbox', 'ar_undo').text(this.sym_undo);
             undo.on('tap', e => this[MTD_ON_UNDO]());
-            cnsl.append(ELEM('ars_pad_cell').append(toknum), ELEM('ars_pad_cell').append(undo));
+            cnsl.append(ELEM('ars_pad_cell ars_pdcl_info').append(toknum), ELEM('ars_pad_cell').append(undo));
             let [tokseq, stab] = this[MTD_NEW_TAB]('tokseq', [this[PR_SEQ_LEN], 1]);
             this[PR_AB_SEQ] = stab;
             elem.append(scb, cnsl, ELEM('ars_sqpd_tseq').append(tokseq));
@@ -131,7 +131,7 @@ jQuery('document').ready(() => {
         }
         
         [MTD_NEW_UNIT](tok) {
-            let uelem = ELEM('ars_unit');
+            let uelem = ELEM('ars_unit ars_rdbox');
             uelem.text(tok);
             let ttyp = this[PR_GAME].toktype(tok);
             if(['char', 'block'].includes(ttyp)) {
@@ -143,7 +143,7 @@ jQuery('document').ready(() => {
         [MTD_NEW_TAB](name, size, tap = false) {
             let id = 'ar_tab_' + name;
             let [sw, sh] = size;
-            let elem = ELEM('ars_tab', id, 'table');
+            let elem = ELEM('ars_tab ars_rdbox', id, 'table');
             let tab = [];
             for(let y = 0; y < sh; y++) {
                 let relem = ELEM('ars_row', null, 'tr');

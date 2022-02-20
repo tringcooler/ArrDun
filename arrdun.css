@@ -1,7 +1,7 @@
 
 .artheme_default {
     --bg-all-color: #f8f8f8;
-    --bg-pad-color: #c0c0c0;
+    --bg-pad-color: #e0e0e0;
     --bg-dun-color: #c0c0c0;
     --bg-ppp-color: #f0f0f0;
     
@@ -11,75 +11,11 @@
     --u-sw-color: yellow;
     --u-bw-color: red;
     --u-bl-color: blue;
+    
+    --bt-pad-color: #f0f0f0;
 }
 
 /*==========*/
-
-.ars_pad_console {
-    display: table;
-}
-
-.ars_pad_cell {
-    display: table-cell;
-}
-
-.ars_pad_info {
-    width: 135px;
-}
-
-#ar_score_frame {
-    position: relative;
-    bottom: 0px;
-    overflow: hidden;
-    height: 100px;
-}
-
-.ars_score_text {
-    white-space: pre-line;
-}
-
-#ar_score {
-    position: absolute;
-    bottom: 0px;
-}
-
-#ar_tokleft {
-    height: 30px;
-}
-
-.ars_pad_button {
-    border: 1px solid;
-    width: 30px;
-    height: 30px;
-}
-
-/*==========*/
-
-.ars_board {
-    position: relative;
-    width: 60%;
-    left: 20%;
-}
-
-.ars_sect {
-    border-radius: 5px;
-    padding: 5px;
-}
-
-#ar_pad {
-    background-color: var(--bg-pad-color);
-    margin-bottom: 10px;
-}
-
-#ar_tab_main {
-    background-color: var(--bg-dun-color);
-}
-
-.ars_tab {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-}
 
 .ars_sqpd_mtab {
     position: relative;
@@ -103,10 +39,87 @@
     padding-bottom: 80%;
 }
 
+.ars_rdbox {
+    border-radius: 5px;
+}
+
+/*==========*/
+
+.ars_pad_console {
+    display: table;
+    width: 90%;
+    padding: 5%;
+}
+
+.ars_pad_cell {
+    display: table-cell;
+}
+
+.ars_pdcl_info {
+    width: 80%;
+}
+
+#ar_tokleft {
+    height: 50px;
+}
+
+#ar_score_frame {
+    position: relative;
+    bottom: 0px;
+    overflow: hidden;
+    height: 100px;
+}
+
+.ars_score_text {
+    white-space: pre-line;
+}
+
+#ar_score {
+    position: absolute;
+    bottom: 0px;
+}
+
+.ars_pad_button {
+    border: 2px solid;
+    width: 100%;
+    height: 50px;
+    background-color: var(--bt-pad-color);
+}
+
+/*==========*/
+
+.ars_board {
+    position: relative;
+    width: 60%;
+    left: 20%;
+}
+
+.ars_sect {
+    
+}
+
+#ar_pad {
+    background-color: var(--bg-pad-color);
+    margin-bottom: 10px;
+}
+
+#ar_tab_main {
+    background-color: var(--bg-dun-color);
+}
+
+.ars_tab {
+    background-color: var(--bg-dun-color);
+    padding: 5px;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
 /*==========*/
 
 .ars_unit {
-    border: 1px solid;
+    border: 2px solid;
+    border-color: var(--bg-all-color);
     position: absolute;
     width: 100%;
     height: 100%;
