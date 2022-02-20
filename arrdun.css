@@ -236,4 +236,31 @@
     font-size: 50px;
     font-weight: 1000;
     font-family: sans-serif;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.arps_title_footer {
+    position: absolute;
+    font-size: 24px;
+    font-weight: 400;
+    font-family: sans-serif;
+}
+
+.arps_text {
+    margin-top: 20px;
+}
+
+.arps_text_detail {
+    font-size: 24px;
+    font-weight: 400;
+    font-family: sans-serif;
+    padding-left: 50px;
+}
+
+.arps_txt_button {
+    display: inline-block;
+    text-align: center;
+    width: 50px;
+    height: 50px;
 }
