@@ -17,7 +17,7 @@ jQuery('document').ready(() => {
         MTD_GETUNIT, MTD_GETTOK, MTD_DIST,
         MTD_GETSEQ, MTD_SHIFTSEQ, MTD_FIND_TAB,
         MTD_UPDATE_MTAB, MTD_UPDATE_SCORE,
-        MTD_ON_TAP, MTD_ON_UNDO, MTD_ON_POPUP,
+        MTD_ON_TAP, MTD_ON_UNDO, MTD_ON_POPUP, MTD_SHARE_TXT,
         MTD_SAVE, MTD_LOAD_DATA, MTD_LOAD,
         MTD_INIT_SYMS, MTD_TOKDIR,
         MTD_REC_PUSH, MTD_REC_POP,
@@ -103,8 +103,8 @@ jQuery('document').ready(() => {
         [MTD_NEW_POPUP]() {
             let elem = ELEM('ars_popup', 'ar_popup');
             let txt_sc = ELEM('ars_score_text', 'ar_popup_score');
-            let butt_cp = ELEM('ars_popup_button ars_rdbox', 'ar_popup_copy').text('copy');
-            let butt_ld = ELEM('ars_popup_button ars_rdbox', 'ar_popup_copy').text('load');
+            let butt_cp = ELEM('ars_popup_button ars_rdbox', 'ar_popup_copy').text('Copy');
+            let butt_ld = ELEM('ars_popup_button ars_rdbox', 'ar_popup_copy').text('Load');
             elem.append(
                 ELEM('ars_popup_title', 'ar_popup_title'),
                 ELEM('ars_popup_frame', 'ar_popup_main').append(txt_sc),
@@ -115,7 +115,7 @@ jQuery('document').ready(() => {
             );
             let ppp = $('#arp_popup');
             butt_cp.on('tap', e => {
-                CLP_COPY(txt_sc.text(), '#ar_popup');
+                CLP_COPY(this[MTD_SHARE_TXT](txt_sc.text()), '#ar_popup');
             });
             butt_ld.on('tap', async e => {
                 ppp.popup('close');
@@ -422,6 +422,12 @@ jQuery('document').ready(() => {
             this[FLG_AB_BUSSY] = false;
         }
         
+        [MTD_SHARE_TXT](score) {
+            return 'ArrDun ' + this[PR_GAME].seed + ' Lv:' + this.level + '\n\n'
+                + score + '\n\n'
+                + 'https://tringcooler.github.io/ArrDun/\n';
+        }
+        
         [MTD_ON_POPUP](...args) {
             let lddat;
             if(this[PR_GAME].isinit && (lddat = this[MTD_LOAD_DATA]())) {
@@ -432,7 +438,7 @@ jQuery('document').ready(() => {
             } else {
                 let lvlup = args[0] ?? false;
                 if(lvlup) {
-                    $('#ar_popup_title').text('Level Up');
+                    $('#ar_popup_title').text('Level Done');
                 } else {
                     $('#ar_popup_title').text('Share');
                 }
@@ -462,6 +468,10 @@ jQuery('document').ready(() => {
         
         levelup() {
             this[MTD_ON_POPUP](true);
+        }
+        
+        get level() {
+            return this[PR_GAME].level(this[PR_SEQ_LEN]);
         }
         
         [MTD_SAVE]() {
@@ -513,6 +523,10 @@ jQuery('document').ready(() => {
             return this;
         }
         
+        get seed() {
+            return this[PR_SEED];
+        }
+        
         get size() {
             return this[PR_TAB_SIZE];
         }
@@ -520,6 +534,14 @@ jQuery('document').ready(() => {
         tokleft(shft = 0) {
             let td = this[PR_TOK_BLOCK];
             return td - (this[PR_TOK_CNT] - shft) % td;
+        }
+        
+        tokcnt(shft = 0) {
+            return this[PR_TOK_CNT] - shft;
+        }
+        
+        level(shft = 0) {
+            return Math.floor((this[PR_TOK_CNT] - shft) / this[PR_TOK_BLOCK]);
         }
         
         [MTD_INIT_SYMS]() {
