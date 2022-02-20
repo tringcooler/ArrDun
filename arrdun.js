@@ -31,6 +31,9 @@ jQuery('document').ready(() => {
     const
         CALLABLE = (f) => f instanceof Function,
         RLIM = (v, a, b) => Math.max(a, Math.min(b, v)),
+        ASLEEP = ms => new Promise(resolve => {
+            setTimeout(resolve, ms);
+        }),
         ELEM = (cls, id, etag = 'div') => {
             let e = $('<'+etag+'>');
             if(cls) {
@@ -40,6 +43,13 @@ jQuery('document').ready(() => {
                 e = e.attr('id', id);
             }
             return e;
+        },
+        CLP_COPY = async (text, par='body') => {
+            let $temp = $('<textarea>').css({ width: "1px", height: "1px" });
+            $(par).append($temp);
+            $temp.val(text).select();
+            document.execCommand('copy');
+            $temp.remove();
         };
     
     class c_board {
@@ -72,7 +82,7 @@ jQuery('document').ready(() => {
         [MTD_NEW_PAD]() {
             let elem = ELEM('ars_pad', 'ar_pad');
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
-            let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM(null, 'ar_score'));
+            let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM('ars_score_text', 'ar_score'));
             let shr = ELEM('ars_pad_button', 'ar_share').text(this.sym_share);
             shr.on('tap', e => this[MTD_ON_SHARE]());
             scb.append(ELEM('ars_pad_cell').append(score), ELEM('ars_pad_cell').append(shr));
@@ -90,8 +100,19 @@ jQuery('document').ready(() => {
         
         [MTD_NEW_POPUP]() {
             let elem = ELEM('ars_popup', 'ar_popup');
-            elem.text('test dialog');
-            $('#popup_win').append(elem);
+            let txt_sc = ELEM('ars_score_text', 'ar_popup_score');
+            let butt_cp = ELEM('ars_popup_button', 'ar_popup_copy').text('copy');
+            elem.append(
+                ELEM('ars_popup_title', 'ar_popup_title'),
+                ELEM('ars_popup_frame', 'ar_popup_main').append(txt_sc),
+                ELEM('ars_popup_button_frame').append(
+                    ELEM('ars_popup_button_cell').append(butt_cp),
+                ),
+            );
+            butt_cp.on('tap', e => {
+                CLP_COPY(txt_sc.text(), '#popup');
+            });
+            $('#popup').append(elem);
             return elem;
         }
         
@@ -384,8 +405,11 @@ jQuery('document').ready(() => {
         
         [MTD_ON_SHARE](lvlup = false) {
             if(lvlup) {
-                console.log('level up');
+                $('#ar_popup_title').text('level up');
+            } else {
+                $('#ar_popup_title').text('share');
             }
+            $('#ar_popup_score').text(this[PR_GAME].score);
             $('#popup').popup('open');
         }
         

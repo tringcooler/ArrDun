@@ -18,8 +18,11 @@
     height: 100px;
 }
 
-#ar_score {
+.ars_score_text {
     white-space: pre-line;
+}
+
+#ar_score {
     position: absolute;
     bottom: 0px;
 }
@@ -59,4 +62,22 @@
 
 .ars_utyp_sideward {
     background-color: yellow;
+}
+
+.ars_popup {
+    width: 300px;
+}
+
+#ar_popup {
+    height: 500px;
+}
+
+.ars_popup_button_frame {
+    display: table;
+    position: absolute;
+    bottom: 0px;
+}
+
+.ars_popup_button_cell {
+    display: table-cell;
 }
