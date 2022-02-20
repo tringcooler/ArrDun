@@ -5,12 +5,12 @@
     --bg-dun-color: #c0c0c0;
     --bg-ppp-color: #f0f0f0;
     
-    --u-cm-color: white;
-    --u-ch-color: orange;
-    --u-fw-color: green;
-    --u-sw-color: yellow;
-    --u-bw-color: red;
-    --u-bl-color: blue;
+    --u-cm-color: #fbfff9;
+    --u-ch-color: #303030;
+    --u-fw-color: #709754;
+    --u-sw-color: #e7a31c;
+    --u-bw-color: #b5312f;
+    --u-bl-color: #487388;
     --u-tx-color: #e0e0e0;
     
     --bt-pad-color: #f0f0f0;
@@ -145,6 +145,7 @@
 
 .ars_utyp_char{
     background-color: var(--u-ch-color);
+    color: var(--u-tx-color);
 }
 
 .ars_utyp_block{
