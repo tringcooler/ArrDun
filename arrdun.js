@@ -423,7 +423,7 @@ jQuery('document').ready(() => {
         }
         
         [MTD_SHARE_TXT](score) {
-            return 'ArrDun ' + this[PR_GAME].seed + ' Lv:' + this.level + '\n\n'
+            return 'ArrDun (' + this[PR_GAME].seed + ') Lv:' + this.level + '\n\n'
                 + score + '\n\n'
                 + 'https://tringcooler.github.io/ArrDun/\n';
         }
@@ -775,8 +775,9 @@ jQuery('document').ready(() => {
     }
     
     const scene = ELEM('ars_scene', 'ar_scene');
-    /*const*/ game = new c_arrdun([3, 3], 16, 'hello world');
-    /*const*/ board = new c_board(game, 3);
+    const day_seed = (new Date()).toDateString();
+    const game = new c_arrdun([3, 3], 16, day_seed);
+    const board = new c_board(game, 3);
     scene.append(board.elem);
     board.start();
     $('#main').append(scene);
