@@ -494,7 +494,7 @@ jQuery('document').ready(() => {
             this[PR_TAB_SIZE] = size;
             this[PR_TOK_BLOCK] = toknum;
             this[PR_SEED] = seed;
-            this[PR_SCORE] = new ARSCORE(Math.round(Math.sqrt(toknum)));
+            this[PR_SCORE] = new ARSCORE(Math.round(Math.sqrt(toknum)) + 2);
             this.reset();
         }
         
@@ -746,7 +746,7 @@ jQuery('document').ready(() => {
     }
     
     const scene = ELEM('ars_scene', 'ar_scene');
-    /*const*/ game = new c_arrdun([3, 3], 5, 'hello world');
+    /*const*/ game = new c_arrdun([3, 3], 16, 'hello world');
     /*const*/ board = new c_board(game, 3);
     scene.append(board.elem);
     board.start();

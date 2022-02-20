@@ -81,3 +81,10 @@
 .ars_popup_button_cell {
     display: table-cell;
 }
+
+.arps_page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
