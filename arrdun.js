@@ -395,6 +395,8 @@ jQuery('document').ready(() => {
             let tl = Math.max(0, this[PR_GAME].tokleft(this[PR_SEQ_LEN]));
             this[PR_AB_PAD].find('#ar_tokleft').text(tl > 0 ? tl : this.sym_inf);
             this[PR_AB_PAD].find('#ar_score').text(this[PR_GAME].score);
+            $('.arps_rl_sc').text(tl);
+            $('.arps_rl_sc1').text(tl-1);
         }
         
         async [MTD_ON_TAP](pos) {
