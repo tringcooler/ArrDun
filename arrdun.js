@@ -86,7 +86,7 @@ jQuery('document').ready(() => {
             let scb = ELEM('ars_pad_console', 'ar_pad_score');
             let score = ELEM('ars_pad_info', 'ar_score_frame').append(ELEM('ars_score_text', 'ar_score'));
             let shr = ELEM('ars_pad_button ars_rdbox ars_center ars_button', 'ar_share').text(this.sym_share);
-            shr.on('tap', async e => {
+            shr.on('tap', e => {
                 e.preventDefault();
                 this[MTD_ON_POPUP]();
             });
