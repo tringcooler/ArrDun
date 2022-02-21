@@ -53,6 +53,16 @@ jQuery('document').ready(() => {
             $temp.remove();
         };
     
+    const SHARE_URL = (() => {
+        let u = location.href;
+        if(u.includes('itch')) {
+            $('#arp_rules').hide();
+            return 'https://bsod123456.itch.io/arrdun';
+        } else {
+            return 'https://tringcooler.github.io/ArrDun/';
+        }
+    })();
+    
     class c_board {
         
         constructor(game, slen) {
@@ -433,7 +443,7 @@ jQuery('document').ready(() => {
         [MTD_SHARE_TXT](score) {
             return 'ArrDun (' + this[PR_GAME].seed + ') Lv:' + this.level + '\n\n'
                 + score + '\n\n'
-                + 'https://tringcooler.github.io/ArrDun/\n';
+                + SHARE_URL + '\n';
         }
         
         [MTD_ON_POPUP](...args) {
