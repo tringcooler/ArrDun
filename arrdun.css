@@ -171,6 +171,8 @@
 /*==========*/
 
 .ars_popup {
+    border: 5px solid;
+    border-color: var(--bt-txt-color);
     width: calc(var(--win-width) * 0.9);
     background-color: var(--bg-ppp-color);
     display: flex;

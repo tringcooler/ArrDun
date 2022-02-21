@@ -104,7 +104,7 @@ jQuery('document').ready(() => {
         }
         
         [MTD_NEW_POPUP]() {
-            let elem = ELEM('ars_popup', 'ar_popup');
+            let elem = ELEM('ars_popup ars_rdbox', 'ar_popup');
             let txt_sc = ELEM('ars_score_text', 'ar_popup_score');
             let butt_cp = ELEM('ars_popup_button ars_rdbox', 'ar_popup_copy').text('Copy');
             let butt_ld = ELEM('ars_popup_button ars_rdbox', 'ar_popup_copy').text('Load');
