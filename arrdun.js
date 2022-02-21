@@ -53,8 +53,11 @@ jQuery('document').ready(() => {
             $temp.remove();
         };
     
+    const RELEASE_SITE = 'github';
+    
     const SHARE_URL = (() => {
-        let u = location.href;
+        //let u = location.href;
+        let u = RELEASE_SITE;
         if(u.includes('itch')) {
             $('#arp_rules').hide();
             return 'https://bsod123456.itch.io/arrdun';
